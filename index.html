@@ -222,8 +222,16 @@
       <div class="tier-row">
         <div class="tier-btn active" data-tier="basic" id="tierBasic">Basic<small>$7/mi after 5 + tolls</small></div>
         <div class="tier-btn" data-tier="plus" id="tierPlus">Plus<small>Free to 100mi, then $7/mi + tolls</small></div>
-        <div class="tier-btn" data-tier="premier" id="tierPremier">Premier<small>AAA pays everything</small></div>
+        <div class="tier-btn" data-tier="premier" id="tierPremier">Premier<small>Free to 200/100mi, then $7/mi</small></div>
         <div class="tier-btn" data-tier="nonmember" id="tierNonmember">Non-Member<small>Pays full job cost</small></div>
+      </div>
+
+      <div class="field span4" id="premierVisitField" style="display:none;">
+        <label>Premier — Service Visit</label>
+        <div class="tier-row">
+          <div class="tier-btn visit-btn active" data-visit="first" id="visitFirst">1st Service<small>AAA covers up to 200 loaded mi</small></div>
+          <div class="tier-btn visit-btn" data-visit="second" id="visitSecond">2nd+ Service<small>AAA covers up to 100 loaded mi</small></div>
+        </div>
       </div>
 
       <div class="section-label">Extras</div>
@@ -241,8 +249,9 @@
 
       <div class="section-label">Payment</div>
       <div class="field span2">
-        <label>Payment Method</label>
-        <select id="f_paymethod">
+        <label>Payment Method *</label>
+        <select id="f_paymethod" required>
+          <option value="" disabled selected>— Select payment method —</option>
           <option>Cash</option>
           <option>Credit Card</option>
           <option>Debit Card</option>
@@ -252,8 +261,8 @@
         </select>
       </div>
       <div class="field span2">
-        <label>Out of Pocket — Override ($, optional)</label>
-        <input type="number" id="f_oop_override" min="0" step="0.01" placeholder="Leave blank to use calculated amount">
+        <label>Out of Pocket ($)</label>
+        <input type="number" id="f_oop_override" min="0" step="0.01" placeholder="$0.00">
       </div>
 
       <div class="breakdown" id="breakdown">
@@ -384,20 +393,27 @@ document.addEventListener('click', (e)=>{
 // Loaded (tow) miles: first 5 free. Beyond that, each mile is either
 // covered by AAA ($3.50/mi) or paid by the member out of pocket ($7/mi),
 // depending on tier coverage.
-function loadedMileageSplit(miles, tier){
+function loadedMileageSplit(miles, tier, premierVisit){
   const billable = Math.max(0, miles - 5);
   let aaaMiles = 0, memberMiles = 0;
   if(tier === 'basic'){
     memberMiles = billable; // AAA covers nothing beyond the free 5
   } else if(tier === 'plus'){
-    if(miles <= 100){
+    const cap = 100;
+    if(miles <= cap){
       aaaMiles = billable; // miles 6-100 covered by AAA
     } else {
-      aaaMiles = 95; // miles 6 through 100
-      memberMiles = miles - 100; // everything past 100 is on the member
+      aaaMiles = cap - 5; // miles 6 through 100
+      memberMiles = miles - cap; // everything past the cap is on the member
     }
   } else if(tier === 'premier'){
-    aaaMiles = billable; // AAA covers everything beyond the free 5
+    const cap = (premierVisit === 'second') ? 100 : 200; // 1st service: 200mi covered, 2nd+: 100mi covered
+    if(miles <= cap){
+      aaaMiles = billable;
+    } else {
+      aaaMiles = cap - 5;
+      memberMiles = miles - cap;
+    }
   } else if(tier === 'nonmember'){
     memberMiles = billable; // no AAA coverage at all
   }
@@ -414,7 +430,7 @@ function calcJob(vals){
   // En route miles: flat job-cost rate, not billed to the member directly.
   const enrouteCharge = Math.max(0, enroute-5) * 2.50;
 
-  const loadedSplit = loadedMileageSplit(loaded, vals.tier);
+  const loadedSplit = loadedMileageSplit(loaded, vals.tier, vals.premierVisit);
   const loadedCharge = loadedSplit.totalCharge;
   const jobTotal = HOOKUP_FEE + extrasCharge + enrouteCharge + loadedCharge + tollsTotal;
 
@@ -426,7 +442,7 @@ function calcJob(vals){
   } else if(vals.tier === 'plus'){
     oopTolls = wentIntoOverage ? tollsTotal : 0;
   } else if(vals.tier === 'premier'){
-    oopTolls = 0;
+    oopTolls = wentIntoOverage ? tollsTotal : 0;
   } else if(vals.tier === 'nonmember'){
     oopHookup = HOOKUP_FEE;
     oopTolls = tollsTotal;
@@ -446,9 +462,12 @@ function readForm(){
     tollsEnroute: parseFloat($('f_tolls_enroute').value)||0,
     tollsLoaded: parseFloat($('f_tolls_loaded').value)||0,
     tier: tier,
+    premierVisit: premierVisit,
     extras: selectedExtras
   };
 }
+
+let oopManuallyEdited = false;
 
 function recalc(){
   const vals = readForm();
@@ -460,28 +479,51 @@ function recalc(){
   $('calc_loaded').textContent = fmtMoney(c.loadedCharge);
   $('calc_tolls').textContent = fmtMoney(c.tollsTotal);
   $('calc_jobtotal').textContent = fmtMoney(c.jobTotal);
-  const override = $('f_oop_override').value;
-  const usingOverride = override !== '';
-  const oopDisplay = usingOverride ? (parseFloat(override)||0) : c.oop;
+
+  // Auto-populate the Out of Pocket field with the calculated amount,
+  // as long as the user hasn't manually typed their own value.
+  if(!oopManuallyEdited){
+    $('f_oop_override').value = c.oop > 0 ? c.oop.toFixed(2) : '';
+  }
+
+  const oopFieldVal = $('f_oop_override').value;
+  const usingManualOverride = oopManuallyEdited && oopFieldVal !== '';
+  const oopDisplay = usingManualOverride ? (parseFloat(oopFieldVal)||0) : c.oop;
   $('calc_oop').textContent = fmtMoney(oopDisplay);
   $('calc_aaa').textContent = fmtMoney(c.jobTotal - oopDisplay);
-  $('calc_oop_hookup').textContent = fmtMoney(usingOverride ? 0 : c.oopHookup);
-  $('calc_oop_miles').textContent = fmtMoney(usingOverride ? 0 : c.oopMiles);
-  $('calc_oop_tolls').textContent = fmtMoney(usingOverride ? 0 : c.oopTolls);
-  $('calc_oop_extras').textContent = fmtMoney(usingOverride ? 0 : c.oopExtras);
-  $('oopSplit').style.display = usingOverride ? 'none' : 'block';
+  $('calc_oop_hookup').textContent = fmtMoney(usingManualOverride ? 0 : c.oopHookup);
+  $('calc_oop_miles').textContent = fmtMoney(usingManualOverride ? 0 : c.oopMiles);
+  $('calc_oop_tolls').textContent = fmtMoney(usingManualOverride ? 0 : c.oopTolls);
+  $('calc_oop_extras').textContent = fmtMoney(usingManualOverride ? 0 : c.oopExtras);
+  $('oopSplit').style.display = usingManualOverride ? 'none' : 'block';
   return c;
 }
 
-['f_enroute','f_loaded','f_tolls_enroute','f_tolls_loaded','f_oop_override'].forEach(id=>{
+$('f_oop_override').addEventListener('input', ()=>{
+  oopManuallyEdited = true;
+  recalc();
+});
+['f_enroute','f_loaded','f_tolls_enroute','f_tolls_loaded'].forEach(id=>{
   $(id).addEventListener('input', recalc);
 });
 
-document.querySelectorAll('.tier-btn').forEach(btn=>{
+let premierVisit = 'first';
+
+document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     tier = btn.getAttribute('data-tier');
+    $('premierVisitField').style.display = (tier === 'premier') ? 'block' : 'none';
+    recalc();
+  });
+});
+
+document.querySelectorAll('.visit-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    premierVisit = btn.getAttribute('data-visit');
     recalc();
   });
 });
@@ -489,11 +531,16 @@ document.querySelectorAll('.tier-btn').forEach(btn=>{
 $('resetBtn').addEventListener('click', ()=>{
   $('jobForm').reset();
   tier = 'basic';
-  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
   $('tierBasic').classList.add('active');
+  premierVisit = 'first';
+  document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+  $('visitFirst').classList.add('active');
+  $('premierVisitField').style.display = 'none';
   selectedExtras = [];
   renderExtrasChips();
   renderExtrasList('');
+  oopManuallyEdited = false;
   recalc();
 });
 
@@ -601,6 +648,7 @@ $('jobForm').addEventListener('submit', (e)=>{
     tollsEnroute: vals.tollsEnroute,
     tollsLoaded: vals.tollsLoaded,
     tier: vals.tier,
+    premierVisit: vals.tier === 'premier' ? premierVisit : null,
     extras: vals.extras,
     paymethod: $('f_paymethod').value,
     jobTotal: c.jobTotal,
@@ -611,11 +659,16 @@ $('jobForm').addEventListener('submit', (e)=>{
   saveJobs();
   $('jobForm').reset();
   tier = 'basic';
-  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
   $('tierBasic').classList.add('active');
+  premierVisit = 'first';
+  document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+  $('visitFirst').classList.add('active');
+  $('premierVisitField').style.display = 'none';
   selectedExtras = [];
   renderExtrasChips();
   renderExtrasList('');
+  oopManuallyEdited = false;
   recalc();
   render();
 });
