@@ -67,7 +67,12 @@
   .breakdown .row span:last-child{color:var(--paper);font-family:'Oswald',sans-serif;}
   .breakdown .row.total{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:15px;}
   .breakdown .row.total span{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;}
+  .breakdown .row.aaa span:last-child{color:var(--good);font-weight:700;}
+  .breakdown .row.oop{margin-top:6px;}
   .breakdown .row.oop span:last-child{color:var(--safety-red);font-weight:700;}
+  .oop-split{padding-left:14px;border-left:2px solid var(--safety-red);margin:4px 0 2px;}
+  .breakdown .row.sub{font-size:12px;padding:2px 0;color:var(--paper-dim);opacity:.85;}
+  .breakdown .row.sub span:last-child{color:var(--paper-dim);font-weight:400;font-family:'Inter',sans-serif;}
 
   .actions{grid-column:span 4;display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
   button.primary{background:var(--amber);color:var(--asphalt);border:none;padding:12px 22px;border-radius:5px;font-weight:700;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;}
@@ -213,11 +218,18 @@
       </div>
 
       <div class="breakdown" id="breakdown">
-        <div class="row"><span>En Route Charge (job cost, $2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
-        <div class="row"><span>Loaded Charge (job cost, $3.50/mi after 5 free)</span><span id="calc_loaded">$0.00</span></div>
-        <div class="row"><span>Total Tolls</span><span id="calc_tolls">$0.00</span></div>
+        <div class="row"><span>Hookup Fee</span><span id="calc_hookup">$65.00</span></div>
+        <div class="row"><span>En Route Charge ($2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
+        <div class="row"><span>Loaded Charge ($3.50/mi after 5 free)</span><span id="calc_loaded">$0.00</span></div>
+        <div class="row"><span>Tolls</span><span id="calc_tolls">$0.00</span></div>
         <div class="row total"><span>Total Job Cost</span><span id="calc_jobtotal">$0.00</span></div>
+        <div class="row aaa"><span>AAA Pays</span><span id="calc_aaa">$0.00</span></div>
         <div class="row oop"><span>Member Out-of-Pocket</span><span id="calc_oop">$0.00</span></div>
+        <div class="oop-split" id="oopSplit">
+          <div class="row sub"><span>— Hookup Fee</span><span id="calc_oop_hookup">$0.00</span></div>
+          <div class="row sub"><span>— Mileage Overage</span><span id="calc_oop_miles">$0.00</span></div>
+          <div class="row sub"><span>— Tolls</span><span id="calc_oop_tolls">$0.00</span></div>
+        </div>
       </div>
 
       <div class="field span4">
@@ -248,25 +260,35 @@ const $ = id => document.getElementById(id);
 const fmtMoney = n => '$' + (Math.round(n*100)/100).toFixed(2);
 const fmtMiles = n => (Math.round(n*10)/10).toString();
 
+const HOOKUP_FEE = 65.00; // AAA pays this on every job, regardless of tier
+
 function calcJob(vals){
   const enroute = vals.enroute, loaded = vals.loaded;
   const tollsTotal = vals.tollsEnroute + vals.tollsLoaded;
 
   const enrouteCharge = Math.max(0, enroute-5) * 2.50;
   const loadedCharge = Math.max(0, loaded-5) * 3.50;
-  const jobTotal = enrouteCharge + loadedCharge + tollsTotal;
+  const jobTotal = HOOKUP_FEE + enrouteCharge + loadedCharge + tollsTotal;
 
-  let oop = 0;
+  let oopHookup = 0, oopMiles = 0, oopTolls = 0;
   if(vals.tier === 'basic'){
-    oop = Math.max(0, loaded-5) * 7 + tollsTotal;
+    oopMiles = Math.max(0, loaded-5) * 7;
+    oopTolls = tollsTotal;
   } else if(vals.tier === 'plus'){
-    oop = loaded > 100 ? (loaded-100)*7 + tollsTotal : 0;
+    if(loaded > 100){
+      oopMiles = (loaded-100) * 7;
+      oopTolls = tollsTotal;
+    }
   } else if(vals.tier === 'premier'){
-    oop = 0;
+    // AAA covers everything, all $0
   } else if(vals.tier === 'nonmember'){
-    oop = jobTotal;
+    oopHookup = HOOKUP_FEE;
+    oopMiles = enrouteCharge + loadedCharge;
+    oopTolls = tollsTotal;
   }
-  return {enrouteCharge, loadedCharge, tollsTotal, jobTotal, oop};
+  const oop = oopHookup + oopMiles + oopTolls;
+  const aaaPays = jobTotal - oop;
+  return {enrouteCharge, loadedCharge, tollsTotal, jobTotal, oop, oopHookup, oopMiles, oopTolls, aaaPays};
 }
 
 function readForm(){
@@ -282,6 +304,7 @@ function readForm(){
 function recalc(){
   const vals = readForm();
   const c = calcJob(vals);
+  $('calc_hookup').textContent = fmtMoney(HOOKUP_FEE);
   $('calc_enroute').textContent = fmtMoney(c.enrouteCharge);
   $('calc_loaded').textContent = fmtMoney(c.loadedCharge);
   $('calc_tolls').textContent = fmtMoney(c.tollsTotal);
