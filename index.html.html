@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tow Job Log</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --asphalt:#191c1f;
+    --asphalt-2:#22262a;
+    --steel:#2c3136;
+    --amber:#f5a623;
+    --amber-dim:#c9861a;
+    --safety-red:#e2503a;
+    --paper:#f4f2ee;
+    --paper-dim:#c9c6c0;
+    --line:#3a3f45;
+    --good:#5fb87a;
+    --blue:#5b9bd5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--asphalt);color:var(--paper);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px;}
+
+  header{
+    background:repeating-linear-gradient(135deg, transparent 0 18px, rgba(245,166,35,0.06) 18px 36px), var(--asphalt-2);
+    border-bottom:4px solid var(--amber);
+    padding:36px 20px 26px;margin-bottom:32px;
+  }
+  header .inner{max-width:1080px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .eyebrow{font-family:'Oswald',sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--amber);margin:0 0 6px;}
+  h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:34px;margin:0;letter-spacing:.01em;text-transform:uppercase;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .header-btn-row{display:flex;gap:8px;}
+  .sync-status{font-size:11px;color:var(--paper-dim);}
+  .link-btn{background:none;border:none;color:var(--amber);font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0;font-family:'Inter',sans-serif;}
+  .link-btn:hover{color:#ffb840;}
+  .user-badge{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--paper-dim);}
+  .user-badge .name{color:var(--amber);font-weight:700;}
+  .logout-btn{background:none;border:1px solid var(--line);color:var(--paper-dim);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+  .logout-btn:hover{color:var(--paper);border-color:var(--paper-dim);}
+  .sync-status.connected{color:var(--good);}
+  .report-btn{background:transparent;border:1.5px solid var(--amber);color:var(--amber);padding:9px 16px;border-radius:5px;font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;font-family:'Oswald',sans-serif;}
+  .report-btn:hover{background:var(--amber);color:var(--asphalt);}
+  .stats{display:flex;gap:26px;}
+  .stat{text-align:right;}
+  .stat .n{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:var(--amber);line-height:1;}
+  .stat .l{font-size:11px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+
+  .card{background:var(--asphalt-2);border:1px solid var(--line);border-radius:8px;padding:24px;margin-bottom:24px;}
+  .card h2{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px;color:var(--paper);border-left:4px solid var(--amber);padding-left:10px;}
+  .card .sub{font-size:12.5px;color:var(--paper-dim);margin:0 0 18px 14px;}
+
+  form{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.span2{grid-column:span 2;}
+  .field.span4{grid-column:span 4;}
+  .section-label{grid-column:span 4;font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--amber-dim);margin-top:8px;padding-top:14px;border-top:1px dashed var(--line);}
+  .section-label:first-of-type{border-top:none;margin-top:0;padding-top:0;}
+  label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-dim);}
+  input[type=text],input[type=number],input[type=email],input[type=tel],input[type=date],input[type=time],textarea,select{
+    background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper);
+    padding:10px 11px;font-size:14px;font-family:'Inter',sans-serif;width:100%;
+  }
+  select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--paper-dim) 50%),linear-gradient(135deg,var(--paper-dim) 50%,transparent 50%);background-position:calc(100% - 18px) center,calc(100% - 13px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat;}
+  textarea{resize:vertical;min-height:44px;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);}
+
+  .tier-row{display:flex;gap:8px;grid-column:span 4;}
+  .nm-rates-row{display:flex;gap:12px;grid-column:span 4;}
+  .nm-rates-row .field{flex:1;}
+  .tier-btn{flex:1;padding:12px 10px;border-radius:6px;border:1px solid var(--line);background:var(--steel);color:var(--paper-dim);cursor:pointer;font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.03em;}
+  .tier-btn small{display:block;font-weight:400;text-transform:none;letter-spacing:0;font-size:10.5px;margin-top:3px;opacity:.8;}
+  .tier-btn.active{background:var(--amber);color:var(--asphalt);border-color:var(--amber);}
+  .tier-btn.active.nonmember{background:var(--safety-red);border-color:var(--safety-red);color:#fff;}
+
+  .extras-wrap{position:relative;}
+  .extras-toggle{width:100%;text-align:left;background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper-dim);padding:10px 11px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .extras-toggle:hover{border-color:var(--paper-dim);}
+  #extrasCount{color:var(--amber);font-weight:700;}
+  .extras-panel{display:none;position:absolute;z-index:20;top:calc(100% + 6px);left:0;right:0;background:var(--asphalt-2);border:1px solid var(--amber);border-radius:6px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .extras-panel.open{display:block;}
+  .extras-search{width:100%;background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper);padding:8px 10px;font-size:13px;margin-bottom:8px;font-family:'Inter',sans-serif;}
+  .extras-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+  .extras-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:13px;color:var(--paper-dim);cursor:pointer;}
+  .extras-item:hover{background:rgba(245,166,35,0.08);color:var(--paper);}
+  .extras-item input{accent-color:var(--amber);width:15px;height:15px;flex-shrink:0;}
+  .extras-item .code{color:var(--amber-dim);font-weight:700;margin-right:2px;}
+  .extras-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .extras-chip{background:rgba(245,166,35,0.14);color:var(--amber);border:1px solid var(--amber-dim);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+  .extras-chip button{background:none;border:none;color:var(--amber);cursor:pointer;font-size:13px;line-height:1;padding:0;}
+
+  .addr-wrap{position:relative;}
+  .addr-panel{display:none;position:absolute;z-index:25;top:calc(100% + 4px);left:0;right:0;background:var(--asphalt-2);border:1px solid var(--amber);border-radius:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .addr-panel.open{display:block;}
+  .addr-item{padding:9px 12px;font-size:13px;color:var(--paper-dim);cursor:pointer;border-bottom:1px solid var(--line);}
+  .addr-item:last-child{border-bottom:none;}
+  .addr-item:hover, .addr-item.highlighted{background:rgba(245,166,35,0.1);color:var(--paper);}
+  .addr-loading{padding:9px 12px;font-size:12.5px;color:var(--paper-dim);font-style:italic;}
+
+  .breakdown{grid-column:span 4;background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-top:6px;}
+  .breakdown .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--paper-dim);}
+  .breakdown .row span:last-child{color:var(--paper);font-family:'Oswald',sans-serif;}
+  .breakdown .row.total{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:15px;}
+  .breakdown .row.total span{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;}
+  .breakdown .row.aaa span:last-child{color:var(--good);font-weight:700;}
+  .breakdown .row.oop{margin-top:6px;}
+  .breakdown .row.oop span:last-child{color:var(--safety-red);font-weight:700;}
+  .oop-split{padding-left:14px;border-left:2px solid var(--safety-red);margin:4px 0 2px;}
+  .breakdown .row.sub{font-size:12px;padding:2px 0;color:var(--paper-dim);opacity:.85;}
+  .breakdown .row.sub span:last-child{color:var(--paper-dim);font-weight:400;font-family:'Inter',sans-serif;}
+
+  .actions{grid-column:span 4;display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
+  button.primary{background:var(--amber);color:var(--asphalt);border:none;padding:12px 22px;border-radius:5px;font-weight:700;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;}
+  button.primary:hover{background:#ffb840;}
+  button.secondary{background:transparent;color:var(--paper-dim);border:1px solid var(--line);padding:12px 18px;border-radius:5px;font-weight:600;font-size:14px;cursor:pointer;}
+  button.secondary:hover{color:var(--paper);border-color:var(--paper-dim);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--paper-dim);padding:8px 9px;border-bottom:2px solid var(--line);white-space:nowrap;}
+  tbody td{padding:9px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
+  tbody tr:hover{background:rgba(245,166,35,0.05);}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;}
+  .pill.basic{background:rgba(91,155,213,0.15);color:var(--blue);}
+  .pill.plus{background:rgba(245,166,35,0.15);color:var(--amber);}
+  .pill.premier{background:rgba(95,184,122,0.15);color:var(--good);}
+  .pill.nonmember{background:rgba(226,80,58,0.15);color:var(--safety-red);}
+  .rowtotal{color:var(--safety-red);font-weight:700;font-family:'Oswald',sans-serif;}
+  .del-btn{background:none;border:none;color:var(--paper-dim);cursor:pointer;font-size:16px;line-height:1;}
+  .del-btn:hover{color:var(--safety-red);}
+  .empty{padding:40px 10px;text-align:center;color:var(--paper-dim);font-size:14px;}
+  .tablewrap{overflow-x:auto;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,11,12,0.75);z-index:100;padding:20px;overflow-y:auto;}
+  .modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+  .modal{background:var(--asphalt-2);border:1px solid var(--amber);border-radius:8px;max-width:900px;width:100%;padding:24px;margin-top:30px;}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .modal-header h2{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:20px;margin:0;color:var(--amber);}
+  .modal-close{background:none;border:none;color:var(--paper-dim);font-size:20px;cursor:pointer;line-height:1;}
+  .modal-close:hover{color:var(--paper);}
+  .report-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .report-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .report-tab{background:none;border:none;color:var(--paper-dim);padding:10px 16px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .report-tab.active{color:var(--amber);border-bottom-color:var(--amber);}
+  .report-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px;}
+  .report-stat{background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:14px;text-align:center;}
+  .report-stat .v{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:var(--amber);}
+  .report-stat .l{font-size:10.5px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+  .report-table-wrap{overflow-x:auto;}
+  .driver-breakdown{margin-top:18px;}
+  .driver-breakdown h3{font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-dim);margin:0 0 8px;}
+
+  @media(max-width:720px){
+    form{grid-template-columns:repeat(2,1fr);}
+    .field.span2,.field.span4,.section-label,.breakdown,.actions{grid-column:span 2;}
+    .tier-row{flex-direction:column;}
+    .stats{gap:16px;}
+    .header-right{align-items:stretch;width:100%;}
+    .report-btn{width:100%;}
+    .stats{justify-content:space-between;}
+    .report-controls{grid-template-columns:1fr 1fr;}
+    .report-summary{grid-template-columns:1fr 1fr;}
+    .modal{padding:18px;margin-top:10px;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <div>
+      <p class="eyebrow">Roadside &amp; Recovery</p>
+      <h1>Tow Job Log</h1>
+    </div>
+    <div class="header-right">
+      <div class="user-badge" id="userBadge" style="display:none;">
+        Logged in as <span class="name" id="userBadgeName"></span>
+        <button type="button" class="logout-btn" id="logoutBtn">Log Out</button>
+      </div>
+      <div class="header-btn-row">
+        <button type="button" class="report-btn" id="syncBtn">⚙ Sync Settings</button>
+        <button type="button" class="report-btn" id="reportBtn">Driver Pay Report</button>
+      </div>
+      <div class="sync-status" id="syncStatus">Local storage only — not synced</div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
+        <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
+        <div class="stat"><div class="n" id="statAAA">$0</div><div class="l">AAA Paid</div></div>
+        <div class="stat"><div class="n" id="statOOP">$0</div><div class="l">Out of Pocket</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="modal-overlay" id="syncOverlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h2>Sync Settings</h2>
+      <button type="button" class="modal-close" id="syncClose">✕</button>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Paste the Web App URL from your deployed Google Apps Script below to sync job data
+      to Google Sheets. Leave blank to keep using local browser storage only.
+    </p>
+    <div class="field span4">
+      <label>Google Apps Script Web App URL</label>
+      <input type="text" id="syncUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="actions" style="margin-top:14px;">
+      <button type="button" class="secondary" id="syncTestBtn">Test Connection</button>
+      <button type="button" class="primary" id="syncSaveBtn">Save &amp; Sync Now</button>
+    </div>
+    <div id="syncTestResult" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginOverlay">
+  <div class="modal" style="max-width:420px;margin-top:80px;">
+    <div class="modal-header">
+      <h2>Sign In</h2>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Enter your dispatcher or driver login to access the Tow Job Log.
+    </p>
+    <div class="field span4">
+      <label>Username</label>
+      <input type="text" id="loginUsername" autocomplete="username">
+    </div>
+    <div class="field span4" style="margin-top:12px;">
+      <label>Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button type="button" class="primary" id="loginSubmitBtn" style="width:100%;">Sign In</button>
+    </div>
+    <div id="loginError" style="margin-top:10px;font-size:13px;color:var(--safety-red);"></div>
+    <div style="margin-top:18px;text-align:center;display:flex;justify-content:center;gap:16px;">
+      <button type="button" class="link-btn" id="openManageUsers">Manage Users (Admin)</button>
+      <button type="button" class="link-btn" id="openSyncFromLogin">Sync Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manageUsersOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Manage Users</h2>
+      <button type="button" class="modal-close" id="manageUsersClose">✕</button>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Create a login for a dispatcher or driver. Requires the admin password set in your Apps Script.
+    </p>
+    <div class="field span4">
+      <label>Admin Password</label>
+      <input type="password" id="mu_adminPassword">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Username</label>
+      <input type="text" id="mu_username" placeholder="e.g. rocky.driver">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Display Name</label>
+      <input type="text" id="mu_displayName" placeholder="e.g. Rocky">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Password</label>
+      <input type="password" id="mu_password">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Role</label>
+      <select id="mu_role">
+        <option value="dispatcher">Dispatcher</option>
+        <option value="driver">Driver</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button type="button" class="primary" id="mu_createBtn">Create User</button>
+    </div>
+    <div id="mu_result" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>New Job</h2>
+    <p class="sub">Fill in job details — the member's out-of-pocket cost is calculated automatically based on membership tier.</p>
+    <form id="jobForm">
+
+      <div class="section-label">Job &amp; Contact</div>
+      <div class="field">
+        <label>Job ID</label>
+        <input type="text" id="f_jobid" placeholder="e.g. 10234">
+      </div>
+      <div class="field">
+        <label>Dispatcher Name</label>
+        <select id="f_dispatcher">
+          <option>Patron</option>
+          <option>Rocky</option>
+          <option>Nancy</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Driver Name</label>
+        <select id="f_driver">
+          <option>Rocky</option>
+          <option>Terry</option>
+          <option>Christin</option>
+          <option>Danny</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Call Type</label>
+        <select id="f_calltype">
+          <option>Tow</option>
+          <option>Jump Start</option>
+          <option>Lockout</option>
+          <option>Tire Change</option>
+          <option>Fuel Delivery</option>
+          <option>Winch Out</option>
+          <option>Battery Replacement</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Customer Name</label>
+        <input type="text" id="f_name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="f_email">
+      </div>
+      <div class="field span2">
+        <label>Phone Number</label>
+        <input type="tel" id="f_phone" placeholder="(555) 555-5555">
+      </div>
+
+      <div class="field span2">
+        <label>Pickup Location</label>
+        <div class="addr-wrap">
+          <input type="text" id="f_pickup" autocomplete="off" placeholder="Start typing an address...">
+          <div class="addr-panel" id="f_pickup_panel"></div>
+        </div>
+      </div>
+      <div class="field span2">
+        <label>Drop-off Location</label>
+        <div class="addr-wrap">
+          <input type="text" id="f_dropoff" autocomplete="off" placeholder="Start typing an address...">
+          <div class="addr-panel" id="f_dropoff_panel"></div>
+        </div>
+      </div>
+
+      <div class="section-label">Mileage &amp; Tolls</div>
+      <div class="field">
+        <label>En Route Miles</label>
+        <input type="number" id="f_enroute" min="0" step="0.1" value="0">
+      </div>
+      <div class="field">
+        <label>Tolls (En Route) $</label>
+        <input type="number" id="f_tolls_enroute" min="0" step="0.01" value="0">
+      </div>
+      <div class="field">
+        <label>Loaded Miles</label>
+        <input type="number" id="f_loaded" min="0" step="0.1" value="0">
+      </div>
+      <div class="field">
+        <label>Tolls (Loaded) $</label>
+        <input type="number" id="f_tolls_loaded" min="0" step="0.01" value="0">
+      </div>
+
+      <div class="section-label">Membership</div>
+      <div class="tier-row">
+        <div class="tier-btn active" data-tier="basic" id="tierBasic">Basic<small>$7/mi after 5 + tolls</small></div>
+        <div class="tier-btn" data-tier="plus" id="tierPlus">Plus<small>Free to 100mi, then $7/mi + tolls</small></div>
+        <div class="tier-btn" data-tier="premier" id="tierPremier">Premier<small>Free to 200/100mi, then $7/mi</small></div>
+        <div class="tier-btn" data-tier="nonmember" id="tierNonmember">Non-Member<small>Pays full job cost</small></div>
+      </div>
+
+      <div class="field span4" id="premierVisitField" style="display:none;">
+        <label>Premier — Service Visit</label>
+        <div class="tier-row">
+          <div class="tier-btn visit-btn active" data-visit="first" id="visitFirst">1st Service<small>AAA covers up to 200 loaded mi</small></div>
+          <div class="tier-btn visit-btn" data-visit="second" id="visitSecond">2nd+ Service<small>AAA covers up to 100 loaded mi</small></div>
+        </div>
+      </div>
+
+      <div class="field span4" id="nonMemberRatesField" style="display:none;">
+        <label>Non-Member Rates (editable)</label>
+        <div class="nm-rates-row">
+          <div class="field">
+            <label>Hookup Fee ($)</label>
+            <input type="number" id="f_nm_hookup" min="0" step="0.01" value="65.00">
+          </div>
+          <div class="field">
+            <label>En Route Rate ($/mi)</label>
+            <input type="number" id="f_nm_enroute_rate" min="0" step="0.01" value="2.50">
+          </div>
+          <div class="field">
+            <label>Loaded Rate ($/mi)</label>
+            <input type="number" id="f_nm_loaded_rate" min="0" step="0.01" value="7.00">
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Extras</div>
+      <div class="field span4">
+        <label>Additional Service Items</label>
+        <div class="extras-wrap">
+          <button type="button" class="extras-toggle" id="extrasToggle">Select extras… <span id="extrasCount"></span></button>
+          <div class="extras-panel" id="extrasPanel">
+            <input type="text" id="extrasSearch" placeholder="Search extras..." class="extras-search">
+            <div class="extras-list" id="extrasList"></div>
+          </div>
+        </div>
+        <div class="extras-chips" id="extrasChips"></div>
+      </div>
+
+      <div class="section-label">Payment</div>
+      <div class="field span2">
+        <label>Payment Method *</label>
+        <select id="f_paymethod" required>
+          <option value="" disabled selected>— Select payment method —</option>
+          <option>Cash</option>
+          <option>Credit Card</option>
+          <option>Debit Card</option>
+          <option>Check</option>
+          <option>Zelle / Venmo</option>
+          <option>AAA</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field span2">
+        <label>Out of Pocket ($)</label>
+        <input type="number" id="f_oop_override" min="0" step="0.01" placeholder="$0.00">
+      </div>
+
+      <div class="breakdown" id="breakdown">
+        <div class="row"><span>Hookup Fee</span><span id="calc_hookup">$65.00</span></div>
+        <div class="row"><span>Extras (<span id="calc_extras_count">0</span> selected, $75 each)</span><span id="calc_extras">$0.00</span></div>
+        <div class="row"><span>En Route Miles Charge ($2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
+        <div class="row"><span>Loaded Miles Charge (free 5, then $3.50 AAA / $7 member)</span><span id="calc_loaded">$0.00</span></div>
+        <div class="row"><span>Tolls</span><span id="calc_tolls">$0.00</span></div>
+        <div class="row total"><span>Total Job Cost</span><span id="calc_jobtotal">$0.00</span></div>
+        <div class="row aaa"><span>AAA Pays</span><span id="calc_aaa">$0.00</span></div>
+        <div class="row oop"><span>Member Out-of-Pocket</span><span id="calc_oop">$0.00</span></div>
+        <div class="oop-split" id="oopSplit">
+          <div class="row sub"><span>— Hookup Fee</span><span id="calc_oop_hookup">$0.00</span></div>
+          <div class="row sub"><span>— Mileage Overage</span><span id="calc_oop_miles">$0.00</span></div>
+          <div class="row sub"><span>— Tolls</span><span id="calc_oop_tolls">$0.00</span></div>
+          <div class="row sub"><span>— Extras</span><span id="calc_oop_extras">$0.00</span></div>
+        </div>
+      </div>
+
+      <div class="field span4">
+        <label>Notes</label>
+        <textarea id="f_notes" placeholder="Anything else worth remembering about this job"></textarea>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="secondary" id="resetBtn">Clear</button>
+        <button type="submit" class="primary">Log Job</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Job History</h2>
+    <div class="tablewrap" id="tableWrap"><div class="empty">Loading...</div></div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="reportOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Driver Pay Report</h2>
+      <button type="button" class="modal-close" id="reportClose">✕</button>
+    </div>
+
+    <div class="report-controls">
+      <div class="field">
+        <label>From Date</label>
+        <input type="date" id="reportFrom">
+      </div>
+      <div class="field">
+        <label>To Date</label>
+        <input type="date" id="reportTo">
+      </div>
+      <div class="field">
+        <label>Driver</label>
+        <select id="reportDriver">
+          <option value="">All Drivers</option>
+          <option>Rocky</option>
+          <option>Terry</option>
+          <option>Christin</option>
+          <option>Danny</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button type="button" class="primary" id="reportGenerate">Generate Report</button>
+      </div>
+    </div>
+
+    <div class="report-tabs">
+      <button type="button" class="report-tab active" data-view="summary" id="tabSummary">Summary</button>
+      <button type="button" class="report-tab" data-view="detailed" id="tabDetailed">Detailed Report</button>
+    </div>
+
+    <div class="report-body" id="reportBody">
+      <div class="empty">Choose a date range and hit Generate Report.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'tow-jobs-v2';
+let jobs = [];
+let tier = 'basic';
+
+const $ = id => document.getElementById(id);
+const fmtMoney = n => '$' + (Math.round(n*100)/100).toFixed(2);
+const fmtMiles = n => (Math.round(n*10)/10).toString();
+
+const HOOKUP_FEE = 65.00; // AAA pays this on every job, regardless of tier
+const EXTRA_FEE = 75.00; // flat charge added to the job for each selected extra
+
+const EXTRAS_OPTIONS = [
+  "TOW EXCHANGE","TOW CONVERSION","BIKE TOW","ACCIDENT ASSIST ONLY","RV TIRE SERVICE",
+  "2C-RAP 2nd TOW","CE-Calculated Enroute Mileage","CREDIT CARD","Battery Warranty",
+  "BT-Basic Member Tow Mileage","BS-BASIC","BR-PREMIER BATTERY REPLACEMENT","BC-BATTERY COUPON",
+  "BA-BASIC","TC-Tow --> LT SRV","Bringg Service Item","Misc","TC-Extrication","7H-HOME LOCKOUT",
+  "7C-7C LOCKSMITH","RAP Recip Tow","EV NO CHARGE","Long Tow","Long Tow Storage","RV Tow",
+  "Motorcycle Tow","MX-MOTORCYCLE","MW-Military Base Wait","MD-MANAGEMENT DECISIONS",
+  "MC-MANUAL CHARGE","MB-MEMBER BILLING","MA-MEDIUM DUTY TOW","LT-PREMIER LONG TOW","LK-LOCKSMITH",
+  "HEAVY DUTY TOW MILES","HEAVY DUTY","GB-OTG BONUS","FL-FUEL","ET-RAP EXTENDED TOW",
+  "ES-EXTENDED SERVICE TIME","EC-Entitlement Charge","DM-Deadhead Mileage","DL-DOLLIES",
+  "D1-REMOVE DRIVESHAFT","CT-Calculated Tow Mileage","CL-CLEAN UP","XB-Battery Store Prepaid",
+  "WN-WINCHING CHARGES","W2-WINCH 2ND TRUCK","TW-TOW MILEAGE","TL-TOLLS/PARKING","TC-Tow Conversion",
+  "T7-RAP T7 LOCKSMITH","T5-RAP Fuel","T3-RAP T3 WON'T START","T1-RAP T1 FLAT TIRE",
+  "T0-RAP GOA/Canceled Call","ST-STORAGE","RV CHARGES","RL-7A RAP LOCKSMITH","PP-PORTAL TO PORTAL",
+  "PB-PRIORITY BONUS","OP-Over Mileage Premium","OM-Enroute Miles","NY-NYC BONUS"
+];
+
+let selectedExtras = [];
+
+function renderExtrasList(filter){
+  const q = (filter||'').toLowerCase();
+  const list = $('extrasList');
+  const filtered = EXTRAS_OPTIONS.filter(opt => opt.toLowerCase().includes(q));
+  list.innerHTML = filtered.map(opt => {
+    const checked = selectedExtras.includes(opt) ? 'checked' : '';
+    const id = 'extra_' + opt.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<label class="extras-item" for="${id}">
+      <input type="checkbox" id="${id}" data-val="${escapeHtml(opt)}" ${checked}>
+      <span>${escapeHtml(opt)}</span>
+    </label>`;
+  }).join('') || '<div style="padding:8px;color:var(--paper-dim);font-size:13px;">No matches</div>';
+
+  list.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const val = cb.getAttribute('data-val');
+      if(cb.checked){
+        if(!selectedExtras.includes(val)) selectedExtras.push(val);
+      } else {
+        selectedExtras = selectedExtras.filter(v=>v!==val);
+      }
+      renderExtrasChips();
+      recalc();
+    });
+  });
+}
+
+function renderExtrasChips(){
+  $('extrasCount').textContent = selectedExtras.length ? `(${selectedExtras.length} selected — +${fmtMoney(selectedExtras.length*EXTRA_FEE)})` : '';
+  $('extrasChips').innerHTML = selectedExtras.map(opt=>{
+    return `<span class="extras-chip">${escapeHtml(opt)}<button type="button" data-val="${escapeHtml(opt)}" title="Remove">✕</button></span>`;
+  }).join('');
+  $('extrasChips').querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.getAttribute('data-val');
+      selectedExtras = selectedExtras.filter(v=>v!==val);
+      renderExtrasChips();
+      renderExtrasList($('extrasSearch').value);
+      recalc();
+    });
+  });
+}
+
+$('extrasToggle').addEventListener('click', ()=>{
+  $('extrasPanel').classList.toggle('open');
+  if($('extrasPanel').classList.contains('open')){
+    renderExtrasList('');
+    $('extrasSearch').focus();
+  }
+});
+$('extrasSearch').addEventListener('input', (e)=> renderExtrasList(e.target.value));
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.extras-wrap')){
+    $('extrasPanel').classList.remove('open');
+  }
+});
+
+
+// Loaded (tow) miles: first 5 free. Beyond that, each mile is either
+// covered by AAA ($3.50/mi) or paid by the member out of pocket ($7/mi),
+// depending on tier coverage.
+function loadedMileageSplit(miles, tier, premierVisit, nmLoadedRate){
+  const billable = Math.max(0, miles - 5);
+  let aaaMiles = 0, memberMiles = 0;
+  if(tier === 'basic'){
+    memberMiles = billable; // AAA covers nothing beyond the free 5
+  } else if(tier === 'plus'){
+    const cap = 100;
+    if(miles <= cap){
+      aaaMiles = billable; // miles 6-100 covered by AAA
+    } else {
+      aaaMiles = cap - 5; // miles 6 through 100
+      memberMiles = miles - cap; // everything past the cap is on the member
+    }
+  } else if(tier === 'premier'){
+    const cap = (premierVisit === 'second') ? 100 : 200; // 1st service: 200mi covered, 2nd+: 100mi covered
+    if(miles <= cap){
+      aaaMiles = billable;
+    } else {
+      aaaMiles = cap - 5;
+      memberMiles = miles - cap;
+    }
+  } else if(tier === 'nonmember'){
+    memberMiles = billable; // no AAA coverage at all
+  }
+  const memberRate = (tier === 'nonmember') ? (nmLoadedRate ?? 7) : 7;
+  const aaaCharge = aaaMiles * 3.50;
+  const memberCharge = memberMiles * memberRate;
+  return {aaaMiles, memberMiles, aaaCharge, memberCharge, totalCharge: aaaCharge + memberCharge};
+}
+
+function calcJob(vals){
+  const enroute = vals.enroute, loaded = vals.loaded;
+  const tollsTotal = vals.tollsEnroute + vals.tollsLoaded;
+  const extrasCharge = (vals.extras ? vals.extras.length : 0) * EXTRA_FEE;
+  const isNonmember = vals.tier === 'nonmember';
+
+  const hookupFee = isNonmember ? (vals.nmHookup ?? HOOKUP_FEE) : HOOKUP_FEE;
+  const enrouteRate = isNonmember ? (vals.nmEnrouteRate ?? 2.50) : 2.50;
+
+  // En route miles: flat job-cost rate, not billed to the member directly
+  // (except for Non-Member jobs, where the rate is editable and the member covers it).
+  const enrouteCharge = Math.max(0, enroute-5) * enrouteRate;
+
+  const loadedSplit = loadedMileageSplit(loaded, vals.tier, vals.premierVisit, vals.nmLoadedRate);
+  const loadedCharge = loadedSplit.totalCharge;
+  const jobTotal = hookupFee + extrasCharge + enrouteCharge + loadedCharge + tollsTotal;
+
+  const wentIntoOverage = loadedSplit.memberMiles > 0;
+
+  let oopHookup = 0, oopTolls = 0, oopEnroute = 0, oopExtras = 0;
+  if(vals.tier === 'basic'){
+    oopTolls = tollsTotal;
+  } else if(vals.tier === 'plus'){
+    oopTolls = wentIntoOverage ? tollsTotal : 0;
+  } else if(vals.tier === 'premier'){
+    oopTolls = wentIntoOverage ? tollsTotal : 0;
+  } else if(vals.tier === 'nonmember'){
+    oopHookup = hookupFee;
+    oopTolls = tollsTotal;
+    oopEnroute = enrouteCharge; // no AAA at all, so the member covers this too
+    oopExtras = extrasCharge;
+  }
+  const oopMiles = loadedSplit.memberCharge + oopEnroute;
+  const oop = oopHookup + oopMiles + oopTolls + oopExtras;
+  const aaaPays = jobTotal - oop;
+  return {enrouteCharge, loadedCharge, tollsTotal, extrasCharge, jobTotal, oop, oopHookup, oopMiles, oopTolls, oopExtras, aaaPays, hookupFee};
+}
+
+function readForm(){
+  return {
+    enroute: parseFloat($('f_enroute').value)||0,
+    loaded: parseFloat($('f_loaded').value)||0,
+    tollsEnroute: parseFloat($('f_tolls_enroute').value)||0,
+    tollsLoaded: parseFloat($('f_tolls_loaded').value)||0,
+    tier: tier,
+    premierVisit: premierVisit,
+    extras: selectedExtras,
+    nmHookup: parseFloat($('f_nm_hookup').value),
+    nmEnrouteRate: parseFloat($('f_nm_enroute_rate').value),
+    nmLoadedRate: parseFloat($('f_nm_loaded_rate').value)
+  };
+}
+
+let oopManuallyEdited = false;
+
+function recalc(){
+  const vals = readForm();
+  const c = calcJob(vals);
+  $('calc_hookup').textContent = fmtMoney(c.hookupFee);
+  $('calc_extras_count').textContent = vals.extras.length;
+  $('calc_extras').textContent = fmtMoney(c.extrasCharge);
+  $('calc_enroute').textContent = fmtMoney(c.enrouteCharge);
+  $('calc_loaded').textContent = fmtMoney(c.loadedCharge);
+  $('calc_tolls').textContent = fmtMoney(c.tollsTotal);
+  $('calc_jobtotal').textContent = fmtMoney(c.jobTotal);
+
+  // Auto-populate the Out of Pocket field with the calculated amount,
+  // as long as the user hasn't manually typed their own value.
+  if(!oopManuallyEdited){
+    $('f_oop_override').value = c.oop > 0 ? c.oop.toFixed(2) : '';
+  }
+
+  const oopFieldVal = $('f_oop_override').value;
+  const usingManualOverride = oopManuallyEdited && oopFieldVal !== '';
+  const oopDisplay = usingManualOverride ? (parseFloat(oopFieldVal)||0) : c.oop;
+  $('calc_oop').textContent = fmtMoney(oopDisplay);
+  $('calc_aaa').textContent = fmtMoney(c.jobTotal - oopDisplay);
+  $('calc_oop_hookup').textContent = fmtMoney(usingManualOverride ? 0 : c.oopHookup);
+  $('calc_oop_miles').textContent = fmtMoney(usingManualOverride ? 0 : c.oopMiles);
+  $('calc_oop_tolls').textContent = fmtMoney(usingManualOverride ? 0 : c.oopTolls);
+  $('calc_oop_extras').textContent = fmtMoney(usingManualOverride ? 0 : c.oopExtras);
+  $('oopSplit').style.display = usingManualOverride ? 'none' : 'block';
+  return c;
+}
+
+$('f_oop_override').addEventListener('input', ()=>{
+  oopManuallyEdited = true;
+  recalc();
+});
+['f_enroute','f_loaded','f_tolls_enroute','f_tolls_loaded'].forEach(id=>{
+  $(id).addEventListener('input', recalc);
+});
+
+let premierVisit = 'first';
+
+document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    tier = btn.getAttribute('data-tier');
+    $('premierVisitField').style.display = (tier === 'premier') ? 'block' : 'none';
+    $('nonMemberRatesField').style.display = (tier === 'nonmember') ? 'block' : 'none';
+    recalc();
+  });
+});
+
+['f_nm_hookup','f_nm_enroute_rate','f_nm_loaded_rate'].forEach(id=>{
+  $(id).addEventListener('input', recalc);
+});
+
+document.querySelectorAll('.visit-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    premierVisit = btn.getAttribute('data-visit');
+    recalc();
+  });
+});
+
+$('resetBtn').addEventListener('click', ()=>{
+  $('jobForm').reset();
+  tier = 'basic';
+  document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
+  $('tierBasic').classList.add('active');
+  premierVisit = 'first';
+  document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+  $('visitFirst').classList.add('active');
+  $('premierVisitField').style.display = 'none';
+  $('nonMemberRatesField').style.display = 'none';
+  selectedExtras = [];
+  renderExtrasChips();
+  renderExtrasList('');
+  oopManuallyEdited = false;
+  recalc();
+});
+
+const SYNC_URL_KEY = 'tow-sync-url';
+
+function getSyncUrl(){
+  try{ return localStorage.getItem(SYNC_URL_KEY) || ''; }catch(e){ return ''; }
+}
+function setSyncUrl(url){
+  try{ localStorage.setItem(SYNC_URL_KEY, url); }catch(e){}
+}
+function updateSyncStatus(){
+  const url = getSyncUrl();
+  const el = $('syncStatus');
+  if(url){
+    el.textContent = 'Synced to Google Sheets';
+    el.classList.add('connected');
+  } else {
+    el.textContent = 'Local storage only — not synced';
+    el.classList.remove('connected');
+  }
+}
+
+async function loadJobs(){
+  const url = getSyncUrl();
+  if(url){
+    try{
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      if(data.ok){
+        jobs = data.jobs || [];
+        // keep a local cache as an offline fallback
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs)); }catch(e){}
+        render();
+        return;
+      }
+    }catch(e){
+      console.error('Sheet load failed, falling back to local cache', e);
+    }
+  }
+  // Fallback: local storage only (no sync URL, or sync failed)
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    jobs = raw ? JSON.parse(raw) : [];
+  }catch(e){ jobs = []; }
+  render();
+}
+
+function saveJobsLocal(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+  }catch(e){
+    alert('Could not save locally. Your browser storage may be full or blocked.');
+  }
+}
+
+// Push a single job to Google Sheets (create or update, de-duplicated by Job ID server-side).
+async function syncJobToSheet(job){
+  const url = getSyncUrl();
+  if(!url) return true;
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight with Apps Script
+      body: JSON.stringify({ action: 'save', job: job })
+    });
+    const data = await res.json();
+    return !!data.ok;
+  }catch(e){
+    console.error('Sync to sheet failed', e);
+    return false;
+  }
+}
+
+async function deleteJobFromSheet(jobid){
+  const url = getSyncUrl();
+  if(!url) return true;
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', jobid: jobid })
+    });
+    const data = await res.json();
+    return !!data.ok;
+  }catch(e){
+    console.error('Delete sync failed', e);
+    return false;
+  }
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function tierLabel(t){
+  return {basic:'Basic',plus:'Plus',premier:'Premier',nonmember:'Non-Member'}[t]||t;
+}
+
+function render(){
+  const wrap = $('tableWrap');
+  if(!jobs.length){
+    wrap.innerHTML = '<div class="empty">No jobs logged yet. Fill out the form above to add your first one.</div>';
+  } else {
+    const sorted = [...jobs].sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+    let rows = sorted.map(j=>{
+      return `<tr>
+        <td>${escapeHtml(j.jobid)}</td>
+        <td>${escapeHtml(j.calltype)}</td>
+        <td>${escapeHtml(j.name)}</td>
+        <td>${escapeHtml(j.phone)}</td>
+        <td>${escapeHtml(j.pickup)} → ${escapeHtml(j.dropoff)}</td>
+        <td>${fmtMiles(j.enroute)}</td>
+        <td>${fmtMiles(j.loaded)}</td>
+        <td>${fmtMoney(j.tollsEnroute+j.tollsLoaded)}</td>
+        <td><span class="pill ${j.tier}">${tierLabel(j.tier)}</span></td>
+        <td title="${escapeHtml((j.extras||[]).join(', '))}">${(j.extras&&j.extras.length) ? j.extras.length + ' item' + (j.extras.length>1?'s':'') : '—'}</td>
+        <td>${escapeHtml(j.driver)}</td>
+        <td>${escapeHtml(j.paymethod)}</td>
+        <td>${fmtMoney(j.jobTotal - j.oop)}</td>
+        <td class="rowtotal">${fmtMoney(j.oop)}</td>
+        <td><button class="del-btn" data-id="${j.id}" title="Delete">✕</button></td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `<table>
+      <thead><tr>
+        <th>Job ID</th><th>Call Type</th><th>Customer</th><th>Phone</th><th>Route</th>
+        <th>En Route Mi</th><th>Loaded Mi</th><th>Tolls</th><th>Tier</th><th>Extras</th><th>Driver</th>
+        <th>Payment</th><th>AAA Pays</th><th>Out of Pocket</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+    wrap.querySelectorAll('.del-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.getAttribute('data-id');
+        const targetJob = jobs.find(j=>j.id===id);
+        if(confirm('Delete this job entry?')){
+          jobs = jobs.filter(j=>j.id!==id);
+          saveJobsLocal();
+          render();
+          if(targetJob){
+            const ok = await deleteJobFromSheet(targetJob.jobid);
+            if(!ok) console.warn('Job removed locally but could not sync deletion to Sheets.');
+          }
+        }
+      });
+    });
+  }
+  updateStats();
+}
+
+function updateStats(){
+  const count = jobs.length;
+  const miles = jobs.reduce((a,j)=>a+(j.enroute||0)+(j.loaded||0),0);
+  const oop = jobs.reduce((a,j)=>a+(j.oop||0),0);
+  const aaa = jobs.reduce((a,j)=>a+((j.jobTotal||0)-(j.oop||0)),0);
+  $('statCount').textContent = count;
+  $('statMiles').textContent = fmtMiles(miles);
+  $('statAAA').textContent = fmtMoney(aaa).replace('.00','');
+  $('statOOP').textContent = fmtMoney(oop).replace('.00','');
+}
+
+$('jobForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const vals = readForm();
+  const c = calcJob(vals);
+  const overrideRaw = $('f_oop_override').value;
+  const oopFinal = overrideRaw !== '' ? (parseFloat(overrideRaw)||0) : c.oop;
+
+  const job = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    createdAt: new Date().toISOString(),
+    jobid: $('f_jobid').value.trim(),
+    dispatcher: $('f_dispatcher').value.trim(),
+    driver: $('f_driver').value.trim(),
+    calltype: $('f_calltype').value,
+    name: $('f_name').value.trim(),
+    email: $('f_email').value.trim(),
+    phone: $('f_phone').value.trim(),
+    pickup: $('f_pickup').value.trim(),
+    dropoff: $('f_dropoff').value.trim(),
+    enroute: vals.enroute,
+    loaded: vals.loaded,
+    tollsEnroute: vals.tollsEnroute,
+    tollsLoaded: vals.tollsLoaded,
+    tier: vals.tier,
+    premierVisit: vals.tier === 'premier' ? premierVisit : null,
+    extras: vals.extras,
+    paymethod: $('f_paymethod').value,
+    jobTotal: c.jobTotal,
+    oop: oopFinal,
+    notes: $('f_notes').value.trim(),
+    nmHookup: vals.tier === 'nonmember' ? vals.nmHookup : null,
+    nmEnrouteRate: vals.tier === 'nonmember' ? vals.nmEnrouteRate : null,
+    nmLoadedRate: vals.tier === 'nonmember' ? vals.nmLoadedRate : null,
+    loggedInAs: (getCurrentUser() ? getCurrentUser().username : null)
+  };
+  jobs.push(job);
+  saveJobsLocal();
+  $('jobForm').reset();
+  tier = 'basic';
+  document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
+  $('tierBasic').classList.add('active');
+  premierVisit = 'first';
+  document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
+  $('visitFirst').classList.add('active');
+  $('premierVisitField').style.display = 'none';
+  $('nonMemberRatesField').style.display = 'none';
+  selectedExtras = [];
+  renderExtrasChips();
+  renderExtrasList('');
+  oopManuallyEdited = false;
+  recalc();
+  render();
+
+  if(getSyncUrl()){
+    const ok = await syncJobToSheet(job);
+    if(!ok) flashSyncWarning();
+  }
+});
+
+function flashSyncWarning(){
+  const el = $('syncStatus');
+  const original = el.textContent;
+  const wasConnected = el.classList.contains('connected');
+  el.textContent = 'Saved locally, but sync to Sheets failed — check connection';
+  el.classList.remove('connected');
+  el.style.color = 'var(--safety-red)';
+  setTimeout(()=>{
+    el.style.color = '';
+    updateSyncStatus();
+  }, 5000);
+}
+
+// --- Address autocomplete (OpenStreetMap Nominatim, free, no API key) ---
+function attachAddressAutocomplete(inputId, panelId){
+  const input = $(inputId);
+  const panel = $(panelId);
+  let debounceTimer = null;
+  let currentResults = [];
+  let highlightedIndex = -1;
+
+  function closePanel(){
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    highlightedIndex = -1;
+  }
+
+  function renderResults(results){
+    currentResults = results;
+    highlightedIndex = -1;
+    if(!results.length){
+      panel.innerHTML = '<div class="addr-loading">No matches found</div>';
+      panel.classList.add('open');
+      return;
+    }
+    panel.innerHTML = results.map((r,i)=>
+      `<div class="addr-item" data-idx="${i}">${escapeHtml(r.display_name)}</div>`
+    ).join('');
+    panel.classList.add('open');
+    panel.querySelectorAll('.addr-item').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        const idx = parseInt(el.getAttribute('data-idx'));
+        input.value = currentResults[idx].display_name;
+        closePanel();
+      });
+    });
+  }
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim();
+    clearTimeout(debounceTimer);
+    if(q.length < 3){
+      closePanel();
+      return;
+    }
+    debounceTimer = setTimeout(async ()=>{
+      panel.innerHTML = '<div class="addr-loading">Searching...</div>';
+      panel.classList.add('open');
+      try{
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=us&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        // Only render if the input hasn't changed since this request started
+        if(input.value.trim() === q){
+          renderResults(data);
+        }
+      }catch(e){
+        panel.innerHTML = '<div class="addr-loading">Search unavailable — type the address manually</div>';
+      }
+    }, 400);
+  });
+
+  input.addEventListener('keydown', (e)=>{
+    const items = panel.querySelectorAll('.addr-item');
+    if(!items.length) return;
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      highlightedIndex = Math.min(highlightedIndex+1, items.length-1);
+      items.forEach((el,i)=>el.classList.toggle('highlighted', i===highlightedIndex));
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex-1, 0);
+      items.forEach((el,i)=>el.classList.toggle('highlighted', i===highlightedIndex));
+    } else if(e.key === 'Enter' && highlightedIndex >= 0){
+      e.preventDefault();
+      input.value = currentResults[highlightedIndex].display_name;
+      closePanel();
+    } else if(e.key === 'Escape'){
+      closePanel();
+    }
+  });
+
+  input.addEventListener('blur', ()=>{
+    setTimeout(closePanel, 150); // allow mousedown on item to register first
+  });
+}
+
+attachAddressAutocomplete('f_pickup', 'f_pickup_panel');
+attachAddressAutocomplete('f_dropoff', 'f_dropoff_panel');
+
+// --- Driver Pay Report ---
+const DRIVER_PAY_RATE = 0.30; // 30% of billing, tolls excluded from this cut
+
+let reportView = 'summary';
+
+$('reportBtn').addEventListener('click', ()=>{
+  $('reportOverlay').classList.add('open');
+});
+$('reportClose').addEventListener('click', ()=>{
+  $('reportOverlay').classList.remove('open');
+});
+$('reportOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'reportOverlay') $('reportOverlay').classList.remove('open');
+});
+
+document.querySelectorAll('.report-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.report-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    reportView = btn.getAttribute('data-view');
+    renderReport();
+  });
+});
+
+$('reportGenerate').addEventListener('click', renderReport);
+
+function jobDateStr(j){
+  // createdAt is an ISO timestamp; compare by calendar date (local)
+  return (j.createdAt || '').slice(0,10);
+}
+
+function getFilteredJobs(){
+  const from = $('reportFrom').value;
+  const to = $('reportTo').value;
+  const driverFilter = $('reportDriver').value;
+  return jobs.filter(j=>{
+    const d = jobDateStr(j);
+    if(from && d < from) return false;
+    if(to && d > to) return false;
+    if(driverFilter && j.driver !== driverFilter) return false;
+    return true;
+  });
+}
+
+function jobTolls(j){
+  return (j.tollsEnroute||0) + (j.tollsLoaded||0);
+}
+function jobDriverPay(j){
+  const billing = j.jobTotal || 0;
+  const tolls = jobTolls(j);
+  return Math.max(0, billing - tolls) * DRIVER_PAY_RATE;
+}
+
+function renderReport(){
+  const filtered = getFilteredJobs();
+  const body = $('reportBody');
+
+  if(!filtered.length){
+    body.innerHTML = '<div class="empty">No jobs found for that date range / driver.</div>';
+    return;
+  }
+
+  if(reportView === 'summary'){
+    renderSummaryView(filtered, body);
+  } else {
+    renderDetailedView(filtered, body);
+  }
+}
+
+function renderSummaryView(filtered, body){
+  const totalBilling = filtered.reduce((a,j)=>a+(j.jobTotal||0),0);
+  const totalTolls = filtered.reduce((a,j)=>a+jobTolls(j),0);
+  const totalPay = filtered.reduce((a,j)=>a+jobDriverPay(j),0);
+
+  // Per-driver breakdown
+  const byDriver = {};
+  filtered.forEach(j=>{
+    const key = j.driver || 'Unassigned';
+    if(!byDriver[key]) byDriver[key] = {jobs:0, billing:0, tolls:0, pay:0};
+    byDriver[key].jobs += 1;
+    byDriver[key].billing += (j.jobTotal||0);
+    byDriver[key].tolls += jobTolls(j);
+    byDriver[key].pay += jobDriverPay(j);
+  });
+
+  const driverRows = Object.keys(byDriver).sort().map(name=>{
+    const d = byDriver[name];
+    return `<tr>
+      <td>${escapeHtml(name)}</td>
+      <td>${d.jobs}</td>
+      <td>${fmtMoney(d.billing)}</td>
+      <td>${fmtMoney(d.tolls)}</td>
+      <td class="rowtotal">${fmtMoney(d.pay)}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="report-summary">
+      <div class="report-stat"><div class="v">${filtered.length}</div><div class="l">Jobs</div></div>
+      <div class="report-stat"><div class="v">${fmtMoney(totalBilling)}</div><div class="l">Total Billing</div></div>
+      <div class="report-stat"><div class="v">${fmtMoney(totalTolls)}</div><div class="l">Total Tolls</div></div>
+      <div class="report-stat"><div class="v" style="color:var(--good);">${fmtMoney(totalPay)}</div><div class="l">Driver Pay (30%, excl. tolls)</div></div>
+    </div>
+    <div class="driver-breakdown">
+      <h3>By Driver</h3>
+      <div class="report-table-wrap">
+        <table>
+          <thead><tr><th>Driver</th><th>Jobs</th><th>Total Billing</th><th>Tolls</th><th>Driver Pay</th></tr></thead>
+          <tbody>${driverRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderDetailedView(filtered, body){
+  const sorted = [...filtered].sort((a,b)=> jobDateStr(a).localeCompare(jobDateStr(b)));
+  const rows = sorted.map(j=>{
+    const billing = j.jobTotal || 0;
+    const tolls = jobTolls(j);
+    const pay = jobDriverPay(j);
+    return `<tr>
+      <td>${escapeHtml(j.jobid)}</td>
+      <td>${jobDateStr(j)}</td>
+      <td>${escapeHtml(j.driver)}</td>
+      <td>${fmtMoney(billing)}</td>
+      <td>${fmtMoney(tolls)}</td>
+      <td class="rowtotal">${fmtMoney(pay)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPay = filtered.reduce((a,j)=>a+jobDriverPay(j),0);
+
+  body.innerHTML = `
+    <div class="report-table-wrap">
+      <table>
+        <thead><tr><th>Job ID</th><th>Date</th><th>Driver</th><th>Total Billing</th><th>Tolls</th><th>30% (excl. tolls)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="report-summary" style="grid-template-columns:1fr;margin-top:14px;">
+      <div class="report-stat"><div class="v" style="color:var(--good);">${fmtMoney(totalPay)}</div><div class="l">Total Driver Pay for Selected Range</div></div>
+    </div>
+  `;
+}
+
+// --- Sync Settings modal ---
+$('syncBtn').addEventListener('click', ()=>{
+  $('syncUrlInput').value = getSyncUrl();
+  $('syncTestResult').textContent = '';
+  $('syncOverlay').classList.add('open');
+});
+$('syncClose').addEventListener('click', ()=>{
+  $('syncOverlay').classList.remove('open');
+});
+$('syncOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'syncOverlay') $('syncOverlay').classList.remove('open');
+});
+
+$('syncTestBtn').addEventListener('click', async ()=>{
+  const url = $('syncUrlInput').value.trim();
+  const result = $('syncTestResult');
+  if(!url){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Enter a Web App URL first.';
+    return;
+  }
+  result.style.color = 'var(--paper-dim)';
+  result.textContent = 'Testing connection...';
+  try{
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if(data.ok){
+      result.style.color = 'var(--good)';
+      result.textContent = `Connected — found ${data.jobs ? data.jobs.length : 0} job(s) in the sheet.`;
+    } else {
+      result.style.color = 'var(--safety-red)';
+      result.textContent = 'Connected, but the script returned an error: ' + (data.error || 'unknown');
+    }
+  }catch(e){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Could not reach that URL. Double-check the deployment and that access is set to "Anyone".';
+  }
+});
+
+$('syncSaveBtn').addEventListener('click', async ()=>{
+  const url = $('syncUrlInput').value.trim();
+  setSyncUrl(url);
+  updateSyncStatus();
+  $('syncOverlay').classList.remove('open');
+  await loadJobs(); // pull the current sheet data in immediately
+  checkAuthGate();
+});
+
+// --- Authentication ---
+const LOGIN_KEY = 'tow-logged-in-user';
+
+function getCurrentUser(){
+  try{
+    const raw = localStorage.getItem(LOGIN_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setCurrentUser(user){
+  try{ localStorage.setItem(LOGIN_KEY, JSON.stringify(user)); }catch(e){}
+}
+function clearCurrentUser(){
+  try{ localStorage.removeItem(LOGIN_KEY); }catch(e){}
+}
+
+function updateUserBadge(){
+  const user = getCurrentUser();
+  if(user){
+    $('userBadge').style.display = 'flex';
+    $('userBadgeName').textContent = `${user.displayName} (${user.role})`;
+  } else {
+    $('userBadge').style.display = 'none';
+  }
+}
+
+// Login is only required once Google Sheets sync is configured — with no sync
+// URL there's no backend to check credentials against, so the app runs open
+// in local-only mode.
+function checkAuthGate(){
+  const syncConfigured = !!getSyncUrl();
+  const user = getCurrentUser();
+  if(syncConfigured && !user){
+    $('loginOverlay').classList.add('open');
+  } else {
+    $('loginOverlay').classList.remove('open');
+  }
+  updateUserBadge();
+}
+
+$('loginSubmitBtn').addEventListener('click', async ()=>{
+  const username = $('loginUsername').value.trim();
+  const password = $('loginPassword').value;
+  const errEl = $('loginError');
+  errEl.textContent = '';
+  const url = getSyncUrl();
+  if(!url){
+    errEl.textContent = 'Sync Settings must be configured before logging in.';
+    return;
+  }
+  if(!username || !password){
+    errEl.textContent = 'Enter both a username and password.';
+    return;
+  }
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'login', username, password })
+    });
+    const data = await res.json();
+    if(data.ok){
+      setCurrentUser(data.user);
+      $('loginPassword').value = '';
+      $('loginOverlay').classList.remove('open');
+      updateUserBadge();
+      await loadJobs();
+    } else {
+      errEl.textContent = data.error || 'Invalid username or password.';
+    }
+  }catch(e){
+    errEl.textContent = 'Could not reach the login server. Check Sync Settings.';
+  }
+});
+
+$('loginPassword').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') $('loginSubmitBtn').click();
+});
+
+$('logoutBtn').addEventListener('click', ()=>{
+  clearCurrentUser();
+  checkAuthGate();
+});
+
+$('openSyncFromLogin').addEventListener('click', ()=>{
+  $('syncUrlInput').value = getSyncUrl();
+  $('syncTestResult').textContent = '';
+  $('syncOverlay').classList.add('open');
+});
+
+// --- Admin: Manage Users ---
+$('openManageUsers').addEventListener('click', ()=>{
+  $('mu_result').textContent = '';
+  $('manageUsersOverlay').classList.add('open');
+});
+$('manageUsersClose').addEventListener('click', ()=>{
+  $('manageUsersOverlay').classList.remove('open');
+});
+$('manageUsersOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'manageUsersOverlay') $('manageUsersOverlay').classList.remove('open');
+});
+
+$('mu_createBtn').addEventListener('click', async ()=>{
+  const url = getSyncUrl();
+  const result = $('mu_result');
+  if(!url){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Configure Sync Settings first — user accounts live in the same Google Sheet.';
+    return;
+  }
+  const adminPassword = $('mu_adminPassword').value;
+  const username = $('mu_username').value.trim();
+  const displayName = $('mu_displayName').value.trim();
+  const password = $('mu_password').value;
+  const role = $('mu_role').value;
+
+  if(!adminPassword || !username || !password){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Admin password, username, and password are all required.';
+    return;
+  }
+
+  result.style.color = 'var(--paper-dim)';
+  result.textContent = 'Creating user...';
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'createUser', adminPassword, username, displayName, password, role })
+    });
+    const data = await res.json();
+    if(data.ok){
+      result.style.color = 'var(--good)';
+      result.textContent = `User "${data.user.username}" created. They can now log in.`;
+      $('mu_username').value = '';
+      $('mu_displayName').value = '';
+      $('mu_password').value = '';
+    } else {
+      result.style.color = 'var(--safety-red)';
+      result.textContent = data.error || 'Could not create user.';
+    }
+  }catch(e){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Could not reach the server. Check Sync Settings.';
+  }
+});
+
+updateSyncStatus();
+recalc();
+checkAuthGate();
+loadJobs().then(checkAuthGate);
+</script>
+</body>
+</html>
