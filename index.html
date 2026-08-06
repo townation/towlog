@@ -32,7 +32,16 @@
   header .inner{max-width:1080px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
   .eyebrow{font-family:'Oswald',sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--amber);margin:0 0 6px;}
   h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:34px;margin:0;letter-spacing:.01em;text-transform:uppercase;}
-  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .header-btn-row{display:flex;gap:8px;}
+  .sync-status{font-size:11px;color:var(--paper-dim);}
+  .link-btn{background:none;border:none;color:var(--amber);font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0;font-family:'Inter',sans-serif;}
+  .link-btn:hover{color:#ffb840;}
+  .user-badge{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--paper-dim);}
+  .user-badge .name{color:var(--amber);font-weight:700;}
+  .logout-btn{background:none;border:1px solid var(--line);color:var(--paper-dim);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;}
+  .logout-btn:hover{color:var(--paper);border-color:var(--paper-dim);}
+  .sync-status.connected{color:var(--good);}
   .report-btn{background:transparent;border:1.5px solid var(--amber);color:var(--amber);padding:9px 16px;border-radius:5px;font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;font-family:'Oswald',sans-serif;}
   .report-btn:hover{background:var(--amber);color:var(--asphalt);}
   .stats{display:flex;gap:26px;}
@@ -165,7 +174,15 @@
       <h1>Tow Job Log</h1>
     </div>
     <div class="header-right">
-      <button type="button" class="report-btn" id="reportBtn">Driver Pay Report</button>
+      <div class="user-badge" id="userBadge" style="display:none;">
+        Logged in as <span class="name" id="userBadgeName"></span>
+        <button type="button" class="logout-btn" id="logoutBtn">Log Out</button>
+      </div>
+      <div class="header-btn-row">
+        <button type="button" class="report-btn" id="syncBtn">⚙ Sync Settings</button>
+        <button type="button" class="report-btn" id="reportBtn">Driver Pay Report</button>
+      </div>
+      <div class="sync-status" id="syncStatus">Local storage only — not synced</div>
       <div class="stats">
         <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
         <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
@@ -175,6 +192,95 @@
     </div>
   </div>
 </header>
+
+<div class="modal-overlay" id="syncOverlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h2>Sync Settings</h2>
+      <button type="button" class="modal-close" id="syncClose">✕</button>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Paste the Web App URL from your deployed Google Apps Script below to sync job data
+      to Google Sheets. Leave blank to keep using local browser storage only.
+    </p>
+    <div class="field span4">
+      <label>Google Apps Script Web App URL</label>
+      <input type="text" id="syncUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="actions" style="margin-top:14px;">
+      <button type="button" class="secondary" id="syncTestBtn">Test Connection</button>
+      <button type="button" class="primary" id="syncSaveBtn">Save &amp; Sync Now</button>
+    </div>
+    <div id="syncTestResult" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginOverlay">
+  <div class="modal" style="max-width:420px;margin-top:80px;">
+    <div class="modal-header">
+      <h2>Sign In</h2>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Enter your dispatcher or driver login to access the Tow Job Log.
+    </p>
+    <div class="field span4">
+      <label>Username</label>
+      <input type="text" id="loginUsername" autocomplete="username">
+    </div>
+    <div class="field span4" style="margin-top:12px;">
+      <label>Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button type="button" class="primary" id="loginSubmitBtn" style="width:100%;">Sign In</button>
+    </div>
+    <div id="loginError" style="margin-top:10px;font-size:13px;color:var(--safety-red);"></div>
+    <div style="margin-top:18px;text-align:center;display:flex;justify-content:center;gap:16px;">
+      <button type="button" class="link-btn" id="openManageUsers">Manage Users (Admin)</button>
+      <button type="button" class="link-btn" id="openSyncFromLogin">Sync Settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="manageUsersOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Manage Users</h2>
+      <button type="button" class="modal-close" id="manageUsersClose">✕</button>
+    </div>
+    <p style="color:var(--paper-dim);font-size:13px;line-height:1.5;margin-top:0;">
+      Create a login for a dispatcher or driver. Requires the admin password set in your Apps Script.
+    </p>
+    <div class="field span4">
+      <label>Admin Password</label>
+      <input type="password" id="mu_adminPassword">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Username</label>
+      <input type="text" id="mu_username" placeholder="e.g. rocky.driver">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Display Name</label>
+      <input type="text" id="mu_displayName" placeholder="e.g. Rocky">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Password</label>
+      <input type="password" id="mu_password">
+    </div>
+    <div class="field span4" style="margin-top:10px;">
+      <label>Role</label>
+      <select id="mu_role">
+        <option value="dispatcher">Dispatcher</option>
+        <option value="driver">Driver</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button type="button" class="primary" id="mu_createBtn">Create User</button>
+    </div>
+    <div id="mu_result" style="margin-top:10px;font-size:13px;"></div>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -668,18 +774,91 @@ $('resetBtn').addEventListener('click', ()=>{
   recalc();
 });
 
-function loadJobs(){
+const SYNC_URL_KEY = 'tow-sync-url';
+
+function getSyncUrl(){
+  try{ return localStorage.getItem(SYNC_URL_KEY) || ''; }catch(e){ return ''; }
+}
+function setSyncUrl(url){
+  try{ localStorage.setItem(SYNC_URL_KEY, url); }catch(e){}
+}
+function updateSyncStatus(){
+  const url = getSyncUrl();
+  const el = $('syncStatus');
+  if(url){
+    el.textContent = 'Synced to Google Sheets';
+    el.classList.add('connected');
+  } else {
+    el.textContent = 'Local storage only — not synced';
+    el.classList.remove('connected');
+  }
+}
+
+async function loadJobs(){
+  const url = getSyncUrl();
+  if(url){
+    try{
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      if(data.ok){
+        jobs = data.jobs || [];
+        // keep a local cache as an offline fallback
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs)); }catch(e){}
+        render();
+        return;
+      }
+    }catch(e){
+      console.error('Sheet load failed, falling back to local cache', e);
+    }
+  }
+  // Fallback: local storage only (no sync URL, or sync failed)
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     jobs = raw ? JSON.parse(raw) : [];
   }catch(e){ jobs = []; }
   render();
 }
-function saveJobs(){
+
+function saveJobsLocal(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
   }catch(e){
     alert('Could not save locally. Your browser storage may be full or blocked.');
+  }
+}
+
+// Push a single job to Google Sheets (create or update, de-duplicated by Job ID server-side).
+async function syncJobToSheet(job){
+  const url = getSyncUrl();
+  if(!url) return true;
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight with Apps Script
+      body: JSON.stringify({ action: 'save', job: job })
+    });
+    const data = await res.json();
+    return !!data.ok;
+  }catch(e){
+    console.error('Sync to sheet failed', e);
+    return false;
+  }
+}
+
+async function deleteJobFromSheet(jobid){
+  const url = getSyncUrl();
+  if(!url) return true;
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', jobid: jobid })
+    });
+    const data = await res.json();
+    return !!data.ok;
+  }catch(e){
+    console.error('Delete sync failed', e);
+    return false;
   }
 }
 
@@ -724,12 +903,17 @@ function render(){
       <tbody>${rows}</tbody>
     </table>`;
     wrap.querySelectorAll('.del-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', async ()=>{
         const id = btn.getAttribute('data-id');
+        const targetJob = jobs.find(j=>j.id===id);
         if(confirm('Delete this job entry?')){
           jobs = jobs.filter(j=>j.id!==id);
-          saveJobs();
+          saveJobsLocal();
           render();
+          if(targetJob){
+            const ok = await deleteJobFromSheet(targetJob.jobid);
+            if(!ok) console.warn('Job removed locally but could not sync deletion to Sheets.');
+          }
         }
       });
     });
@@ -748,7 +932,7 @@ function updateStats(){
   $('statOOP').textContent = fmtMoney(oop).replace('.00','');
 }
 
-$('jobForm').addEventListener('submit', (e)=>{
+$('jobForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const vals = readForm();
   const c = calcJob(vals);
@@ -777,10 +961,14 @@ $('jobForm').addEventListener('submit', (e)=>{
     paymethod: $('f_paymethod').value,
     jobTotal: c.jobTotal,
     oop: oopFinal,
-    notes: $('f_notes').value.trim()
+    notes: $('f_notes').value.trim(),
+    nmHookup: vals.tier === 'nonmember' ? vals.nmHookup : null,
+    nmEnrouteRate: vals.tier === 'nonmember' ? vals.nmEnrouteRate : null,
+    nmLoadedRate: vals.tier === 'nonmember' ? vals.nmLoadedRate : null,
+    loggedInAs: (getCurrentUser() ? getCurrentUser().username : null)
   };
   jobs.push(job);
-  saveJobs();
+  saveJobsLocal();
   $('jobForm').reset();
   tier = 'basic';
   document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(b=>b.classList.remove('active'));
@@ -796,7 +984,25 @@ $('jobForm').addEventListener('submit', (e)=>{
   oopManuallyEdited = false;
   recalc();
   render();
+
+  if(getSyncUrl()){
+    const ok = await syncJobToSheet(job);
+    if(!ok) flashSyncWarning();
+  }
 });
+
+function flashSyncWarning(){
+  const el = $('syncStatus');
+  const original = el.textContent;
+  const wasConnected = el.classList.contains('connected');
+  el.textContent = 'Saved locally, but sync to Sheets failed — check connection';
+  el.classList.remove('connected');
+  el.style.color = 'var(--safety-red)';
+  setTimeout(()=>{
+    el.style.color = '';
+    updateSyncStatus();
+  }, 5000);
+}
 
 // --- Address autocomplete (OpenStreetMap Nominatim, free, no API key) ---
 function attachAddressAutocomplete(inputId, panelId){
@@ -1032,8 +1238,205 @@ function renderDetailedView(filtered, body){
   `;
 }
 
+// --- Sync Settings modal ---
+$('syncBtn').addEventListener('click', ()=>{
+  $('syncUrlInput').value = getSyncUrl();
+  $('syncTestResult').textContent = '';
+  $('syncOverlay').classList.add('open');
+});
+$('syncClose').addEventListener('click', ()=>{
+  $('syncOverlay').classList.remove('open');
+});
+$('syncOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'syncOverlay') $('syncOverlay').classList.remove('open');
+});
+
+$('syncTestBtn').addEventListener('click', async ()=>{
+  const url = $('syncUrlInput').value.trim();
+  const result = $('syncTestResult');
+  if(!url){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Enter a Web App URL first.';
+    return;
+  }
+  result.style.color = 'var(--paper-dim)';
+  result.textContent = 'Testing connection...';
+  try{
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if(data.ok){
+      result.style.color = 'var(--good)';
+      result.textContent = `Connected — found ${data.jobs ? data.jobs.length : 0} job(s) in the sheet.`;
+    } else {
+      result.style.color = 'var(--safety-red)';
+      result.textContent = 'Connected, but the script returned an error: ' + (data.error || 'unknown');
+    }
+  }catch(e){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Could not reach that URL. Double-check the deployment and that access is set to "Anyone".';
+  }
+});
+
+$('syncSaveBtn').addEventListener('click', async ()=>{
+  const url = $('syncUrlInput').value.trim();
+  setSyncUrl(url);
+  updateSyncStatus();
+  $('syncOverlay').classList.remove('open');
+  await loadJobs(); // pull the current sheet data in immediately
+  checkAuthGate();
+});
+
+// --- Authentication ---
+const LOGIN_KEY = 'tow-logged-in-user';
+
+function getCurrentUser(){
+  try{
+    const raw = localStorage.getItem(LOGIN_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setCurrentUser(user){
+  try{ localStorage.setItem(LOGIN_KEY, JSON.stringify(user)); }catch(e){}
+}
+function clearCurrentUser(){
+  try{ localStorage.removeItem(LOGIN_KEY); }catch(e){}
+}
+
+function updateUserBadge(){
+  const user = getCurrentUser();
+  if(user){
+    $('userBadge').style.display = 'flex';
+    $('userBadgeName').textContent = `${user.displayName} (${user.role})`;
+  } else {
+    $('userBadge').style.display = 'none';
+  }
+}
+
+// Login is only required once Google Sheets sync is configured — with no sync
+// URL there's no backend to check credentials against, so the app runs open
+// in local-only mode.
+function checkAuthGate(){
+  const syncConfigured = !!getSyncUrl();
+  const user = getCurrentUser();
+  if(syncConfigured && !user){
+    $('loginOverlay').classList.add('open');
+  } else {
+    $('loginOverlay').classList.remove('open');
+  }
+  updateUserBadge();
+}
+
+$('loginSubmitBtn').addEventListener('click', async ()=>{
+  const username = $('loginUsername').value.trim();
+  const password = $('loginPassword').value;
+  const errEl = $('loginError');
+  errEl.textContent = '';
+  const url = getSyncUrl();
+  if(!url){
+    errEl.textContent = 'Sync Settings must be configured before logging in.';
+    return;
+  }
+  if(!username || !password){
+    errEl.textContent = 'Enter both a username and password.';
+    return;
+  }
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'login', username, password })
+    });
+    const data = await res.json();
+    if(data.ok){
+      setCurrentUser(data.user);
+      $('loginPassword').value = '';
+      $('loginOverlay').classList.remove('open');
+      updateUserBadge();
+      await loadJobs();
+    } else {
+      errEl.textContent = data.error || 'Invalid username or password.';
+    }
+  }catch(e){
+    errEl.textContent = 'Could not reach the login server. Check Sync Settings.';
+  }
+});
+
+$('loginPassword').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') $('loginSubmitBtn').click();
+});
+
+$('logoutBtn').addEventListener('click', ()=>{
+  clearCurrentUser();
+  checkAuthGate();
+});
+
+$('openSyncFromLogin').addEventListener('click', ()=>{
+  $('syncUrlInput').value = getSyncUrl();
+  $('syncTestResult').textContent = '';
+  $('syncOverlay').classList.add('open');
+});
+
+// --- Admin: Manage Users ---
+$('openManageUsers').addEventListener('click', ()=>{
+  $('mu_result').textContent = '';
+  $('manageUsersOverlay').classList.add('open');
+});
+$('manageUsersClose').addEventListener('click', ()=>{
+  $('manageUsersOverlay').classList.remove('open');
+});
+$('manageUsersOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'manageUsersOverlay') $('manageUsersOverlay').classList.remove('open');
+});
+
+$('mu_createBtn').addEventListener('click', async ()=>{
+  const url = getSyncUrl();
+  const result = $('mu_result');
+  if(!url){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Configure Sync Settings first — user accounts live in the same Google Sheet.';
+    return;
+  }
+  const adminPassword = $('mu_adminPassword').value;
+  const username = $('mu_username').value.trim();
+  const displayName = $('mu_displayName').value.trim();
+  const password = $('mu_password').value;
+  const role = $('mu_role').value;
+
+  if(!adminPassword || !username || !password){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Admin password, username, and password are all required.';
+    return;
+  }
+
+  result.style.color = 'var(--paper-dim)';
+  result.textContent = 'Creating user...';
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'createUser', adminPassword, username, displayName, password, role })
+    });
+    const data = await res.json();
+    if(data.ok){
+      result.style.color = 'var(--good)';
+      result.textContent = `User "${data.user.username}" created. They can now log in.`;
+      $('mu_username').value = '';
+      $('mu_displayName').value = '';
+      $('mu_password').value = '';
+    } else {
+      result.style.color = 'var(--safety-red)';
+      result.textContent = data.error || 'Could not create user.';
+    }
+  }catch(e){
+    result.style.color = 'var(--safety-red)';
+    result.textContent = 'Could not reach the server. Check Sync Settings.';
+  }
+});
+
+updateSyncStatus();
 recalc();
-loadJobs();
+checkAuthGate();
+loadJobs().then(checkAuthGate);
 </script>
 </body>
 </html>
