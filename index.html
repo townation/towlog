@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tow Log</title>
+<title>Tow Job Log</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -18,27 +18,18 @@
     --paper-dim:#c9c6c0;
     --line:#3a3f45;
     --good:#5fb87a;
+    --blue:#5b9bd5;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--asphalt);
-    color:var(--paper);
-    font-family:'Inter',sans-serif;
-    min-height:100vh;
-  }
-  .wrap{max-width:960px;margin:0 auto;padding:0 20px 80px;}
+  body{margin:0;background:var(--asphalt);color:var(--paper);font-family:'Inter',sans-serif;min-height:100vh;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px;}
 
-  /* Header */
   header{
-    background:
-      repeating-linear-gradient(135deg, transparent 0 18px, rgba(245,166,35,0.06) 18px 36px),
-      var(--asphalt-2);
+    background:repeating-linear-gradient(135deg, transparent 0 18px, rgba(245,166,35,0.06) 18px 36px), var(--asphalt-2);
     border-bottom:4px solid var(--amber);
-    padding:36px 20px 26px;
-    margin-bottom:32px;
+    padding:36px 20px 26px;margin-bottom:32px;
   }
-  header .inner{max-width:960px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  header .inner{max-width:1080px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
   .eyebrow{font-family:'Oswald',sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--amber);margin:0 0 6px;}
   h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:34px;margin:0;letter-spacing:.01em;text-transform:uppercase;}
   .stats{display:flex;gap:26px;}
@@ -46,29 +37,37 @@
   .stat .n{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:var(--amber);line-height:1;}
   .stat .l{font-size:11px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
 
-  /* Card */
   .card{background:var(--asphalt-2);border:1px solid var(--line);border-radius:8px;padding:24px;margin-bottom:24px;}
-  .card h2{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 18px;color:var(--paper);border-left:4px solid var(--amber);padding-left:10px;}
+  .card h2{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px;color:var(--paper);border-left:4px solid var(--amber);padding-left:10px;}
+  .card .sub{font-size:12.5px;color:var(--paper-dim);margin:0 0 18px 14px;}
 
   form{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
   .field{display:flex;flex-direction:column;gap:6px;}
   .field.span2{grid-column:span 2;}
   .field.span4{grid-column:span 4;}
+  .section-label{grid-column:span 4;font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--amber-dim);margin-top:8px;padding-top:14px;border-top:1px dashed var(--line);}
+  .section-label:first-of-type{border-top:none;margin-top:0;padding-top:0;}
   label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-dim);}
-  input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
+  input[type=text],input[type=number],input[type=email],input[type=tel],input[type=date],input[type=time],textarea,select{
     background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper);
     padding:10px 11px;font-size:14px;font-family:'Inter',sans-serif;width:100%;
   }
+  select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--paper-dim) 50%),linear-gradient(135deg,var(--paper-dim) 50%,transparent 50%);background-position:calc(100% - 18px) center,calc(100% - 13px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat;}
   textarea{resize:vertical;min-height:44px;}
   input:focus,textarea:focus,select:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);}
-  .toggle-row{display:flex;gap:8px;}
-  .toggle-btn{flex:1;padding:10px;border-radius:5px;border:1px solid var(--line);background:var(--steel);color:var(--paper-dim);cursor:pointer;font-size:13px;font-weight:600;text-align:center;}
-  .toggle-btn.active{background:var(--amber);color:var(--asphalt);border-color:var(--amber);}
 
-  .calc-strip{grid-column:span 4;display:flex;justify-content:flex-end;gap:24px;padding-top:8px;border-top:1px dashed var(--line);margin-top:6px;}
-  .calc-strip .item{text-align:right;}
-  .calc-strip .item .v{font-family:'Oswald',sans-serif;font-size:20px;color:var(--amber);}
-  .calc-strip .item .k{font-size:11px;color:var(--paper-dim);text-transform:uppercase;}
+  .tier-row{display:flex;gap:8px;grid-column:span 4;}
+  .tier-btn{flex:1;padding:12px 10px;border-radius:6px;border:1px solid var(--line);background:var(--steel);color:var(--paper-dim);cursor:pointer;font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.03em;}
+  .tier-btn small{display:block;font-weight:400;text-transform:none;letter-spacing:0;font-size:10.5px;margin-top:3px;opacity:.8;}
+  .tier-btn.active{background:var(--amber);color:var(--asphalt);border-color:var(--amber);}
+  .tier-btn.active.nonmember{background:var(--safety-red);border-color:var(--safety-red);color:#fff;}
+
+  .breakdown{grid-column:span 4;background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-top:6px;}
+  .breakdown .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--paper-dim);}
+  .breakdown .row span:last-child{color:var(--paper);font-family:'Oswald',sans-serif;}
+  .breakdown .row.total{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-size:15px;}
+  .breakdown .row.total span{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;}
+  .breakdown .row.oop span:last-child{color:var(--safety-red);font-weight:700;}
 
   .actions{grid-column:span 4;display:flex;justify-content:flex-end;gap:10px;margin-top:4px;}
   button.primary{background:var(--amber);color:var(--asphalt);border:none;padding:12px 22px;border-radius:5px;font-weight:700;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;}
@@ -76,29 +75,27 @@
   button.secondary{background:transparent;color:var(--paper-dim);border:1px solid var(--line);padding:12px 18px;border-radius:5px;font-weight:600;font-size:14px;cursor:pointer;}
   button.secondary:hover{color:var(--paper);border-color:var(--paper-dim);}
 
-  /* Table */
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  thead th{text-align:left;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:11px;color:var(--paper-dim);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap;}
-  tbody td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--paper-dim);padding:8px 9px;border-bottom:2px solid var(--line);white-space:nowrap;}
+  tbody td{padding:9px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap;}
   tbody tr:hover{background:rgba(245,166,35,0.05);}
-  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;}
-  .pill.member{background:rgba(95,184,122,0.15);color:var(--good);}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;}
+  .pill.basic{background:rgba(91,155,213,0.15);color:var(--blue);}
+  .pill.plus{background:rgba(245,166,35,0.15);color:var(--amber);}
+  .pill.premier{background:rgba(95,184,122,0.15);color:var(--good);}
   .pill.nonmember{background:rgba(226,80,58,0.15);color:var(--safety-red);}
-  .rowtotal{color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;}
+  .rowtotal{color:var(--safety-red);font-weight:700;font-family:'Oswald',sans-serif;}
   .del-btn{background:none;border:none;color:var(--paper-dim);cursor:pointer;font-size:16px;line-height:1;}
   .del-btn:hover{color:var(--safety-red);}
   .empty{padding:40px 10px;text-align:center;color:var(--paper-dim);font-size:14px;}
-  .notes-cell{max-width:160px;color:var(--paper-dim);font-size:12.5px;}
+  .tablewrap{overflow-x:auto;}
 
   @media(max-width:720px){
     form{grid-template-columns:repeat(2,1fr);}
-    .field.span2,.field.span4{grid-column:span 2;}
-    .calc-strip{grid-column:span 2;justify-content:space-between;}
-    .actions{grid-column:span 2;}
+    .field.span2,.field.span4,.section-label,.breakdown,.actions{grid-column:span 2;}
+    .tier-row{flex-direction:column;}
     .stats{gap:16px;}
-    table{display:block;overflow-x:auto;}
   }
-  @media (prefers-reduced-motion: reduce){ *{transition:none!important;} }
 </style>
 </head>
 <body>
@@ -111,7 +108,7 @@
     <div class="stats">
       <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
       <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
-      <div class="stat"><div class="n" id="statCash">$0</div><div class="l">Collected</div></div>
+      <div class="stat"><div class="n" id="statOOP">$0</div><div class="l">Out of Pocket</div></div>
     </div>
   </div>
 </header>
@@ -120,66 +117,112 @@
 
   <div class="card">
     <h2>New Job</h2>
+    <p class="sub">Fill in job details — the member's out-of-pocket cost is calculated automatically based on membership tier.</p>
     <form id="jobForm">
+
+      <div class="section-label">Job &amp; Contact</div>
       <div class="field">
-        <label>Date</label>
-        <input type="date" id="f_date" required>
+        <label>Job ID</label>
+        <input type="text" id="f_jobid" placeholder="e.g. 10234">
       </div>
       <div class="field">
-        <label>Time</label>
-        <input type="time" id="f_time">
+        <label>Dispatcher Name</label>
+        <input type="text" id="f_dispatcher">
       </div>
-      <div class="field span2">
+      <div class="field">
+        <label>Driver Name</label>
+        <input type="text" id="f_driver">
+      </div>
+      <div class="field">
+        <label>Call Type</label>
+        <select id="f_calltype">
+          <option>Tow</option>
+          <option>Jump Start</option>
+          <option>Lockout</option>
+          <option>Tire Change</option>
+          <option>Fuel Delivery</option>
+          <option>Winch Out</option>
+          <option>Battery Replacement</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label>Customer Name</label>
-        <input type="text" id="f_name" placeholder="Jane Doe">
+        <input type="text" id="f_name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="f_email">
+      </div>
+      <div class="field span2">
+        <label>Phone Number</label>
+        <input type="tel" id="f_phone" placeholder="(555) 555-5555">
       </div>
 
       <div class="field span2">
-        <label>Membership</label>
-        <div class="toggle-row">
-          <div class="toggle-btn active" data-val="member" id="btnMember">Member</div>
-          <div class="toggle-btn" data-val="nonmember" id="btnNonmember">Non-Member</div>
-        </div>
+        <label>Pickup Location</label>
+        <input type="text" id="f_pickup">
       </div>
       <div class="field span2">
-        <label>Membership #</label>
-        <input type="text" id="f_membernum" placeholder="e.g. AAA-00000000">
+        <label>Drop-off Location</label>
+        <input type="text" id="f_dropoff">
       </div>
 
+      <div class="section-label">Mileage &amp; Tolls</div>
       <div class="field">
         <label>En Route Miles</label>
         <input type="number" id="f_enroute" min="0" step="0.1" value="0">
       </div>
       <div class="field">
-        <label>Tow Miles</label>
-        <input type="number" id="f_towmiles" min="0" step="0.1" value="0">
+        <label>Tolls (En Route) $</label>
+        <input type="number" id="f_tolls_enroute" min="0" step="0.01" value="0">
       </div>
       <div class="field">
-        <label>Tolls ($)</label>
-        <input type="number" id="f_tolls" min="0" step="0.01" value="0">
+        <label>Loaded Miles</label>
+        <input type="number" id="f_loaded" min="0" step="0.1" value="0">
       </div>
       <div class="field">
-        <label>Out-of-Pocket ($)</label>
-        <input type="number" id="f_oop" min="0" step="0.01" value="0">
+        <label>Tolls (Loaded) $</label>
+        <input type="number" id="f_tolls_loaded" min="0" step="0.01" value="0">
       </div>
 
+      <div class="section-label">Membership</div>
+      <div class="tier-row">
+        <div class="tier-btn active" data-tier="basic" id="tierBasic">Basic<small>$7/mi after 5 + tolls</small></div>
+        <div class="tier-btn" data-tier="plus" id="tierPlus">Plus<small>Free to 100mi, then $7/mi + tolls</small></div>
+        <div class="tier-btn" data-tier="premier" id="tierPremier">Premier<small>AAA pays everything</small></div>
+        <div class="tier-btn" data-tier="nonmember" id="tierNonmember">Non-Member<small>Pays full job cost</small></div>
+      </div>
+
+      <div class="section-label">Payment</div>
       <div class="field span2">
-        <label>Additional Charge Description</label>
-        <input type="text" id="f_addldesc" placeholder="Winch out, dolly, extra labor...">
+        <label>Payment Method</label>
+        <select id="f_paymethod">
+          <option>Cash</option>
+          <option>Credit Card</option>
+          <option>Debit Card</option>
+          <option>Check</option>
+          <option>Zelle / Venmo</option>
+          <option>Other</option>
+        </select>
       </div>
       <div class="field span2">
-        <label>Additional Charges ($)</label>
-        <input type="number" id="f_addl" min="0" step="0.01" value="0">
+        <label>Out of Pocket — Override ($, optional)</label>
+        <input type="number" id="f_oop_override" min="0" step="0.01" placeholder="Leave blank to use calculated amount">
+      </div>
+
+      <div class="breakdown" id="breakdown">
+        <div class="row"><span>En Route Charge (job cost, $2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
+        <div class="row"><span>Loaded Charge (job cost, $3.50/mi after 5 free)</span><span id="calc_loaded">$0.00</span></div>
+        <div class="row"><span>Total Tolls</span><span id="calc_tolls">$0.00</span></div>
+        <div class="row total"><span>Total Job Cost</span><span id="calc_jobtotal">$0.00</span></div>
+        <div class="row oop"><span>Member Out-of-Pocket</span><span id="calc_oop">$0.00</span></div>
       </div>
 
       <div class="field span4">
         <label>Notes</label>
-        <textarea id="f_notes" placeholder="Pickup / drop-off locations, vehicle info, anything else worth remembering"></textarea>
-      </div>
-
-      <div class="calc-strip">
-        <div class="item"><div class="v" id="calcMiles">0</div><div class="k">Total Miles</div></div>
-        <div class="item"><div class="v" id="calcTotal">$0.00</div><div class="k">Total Collected</div></div>
+        <textarea id="f_notes" placeholder="Anything else worth remembering about this job"></textarea>
       </div>
 
       <div class="actions">
@@ -191,80 +234,105 @@
 
   <div class="card">
     <h2>Job History</h2>
-    <div id="tableWrap">
-      <div class="empty">Loading...</div>
-    </div>
+    <div class="tablewrap" id="tableWrap"><div class="empty">Loading...</div></div>
   </div>
 
 </div>
 
 <script>
-const STORAGE_KEY = 'tow-jobs';
+const STORAGE_KEY = 'tow-jobs-v2';
 let jobs = [];
-let membership = 'member';
+let tier = 'basic';
 
 const $ = id => document.getElementById(id);
+const fmtMoney = n => '$' + (Math.round(n*100)/100).toFixed(2);
+const fmtMiles = n => (Math.round(n*10)/10).toString();
 
-function fmtMoney(n){ return '$' + (Math.round(n*100)/100).toFixed(2); }
-function fmtMiles(n){ return (Math.round(n*10)/10).toString(); }
+function calcJob(vals){
+  const enroute = vals.enroute, loaded = vals.loaded;
+  const tollsTotal = vals.tollsEnroute + vals.tollsLoaded;
 
-function recalcStrip(){
-  const en = parseFloat($('f_enroute').value)||0;
-  const tow = parseFloat($('f_towmiles').value)||0;
-  const tolls = parseFloat($('f_tolls').value)||0;
-  const oop = parseFloat($('f_oop').value)||0;
-  const addl = parseFloat($('f_addl').value)||0;
-  $('calcMiles').textContent = fmtMiles(en+tow);
-  $('calcTotal').textContent = fmtMoney(tolls+oop+addl);
+  const enrouteCharge = Math.max(0, enroute-5) * 2.50;
+  const loadedCharge = Math.max(0, loaded-5) * 3.50;
+  const jobTotal = enrouteCharge + loadedCharge + tollsTotal;
+
+  let oop = 0;
+  if(vals.tier === 'basic'){
+    oop = Math.max(0, loaded-5) * 7 + tollsTotal;
+  } else if(vals.tier === 'plus'){
+    oop = loaded > 100 ? (loaded-100)*7 + tollsTotal : 0;
+  } else if(vals.tier === 'premier'){
+    oop = 0;
+  } else if(vals.tier === 'nonmember'){
+    oop = jobTotal;
+  }
+  return {enrouteCharge, loadedCharge, tollsTotal, jobTotal, oop};
 }
 
-['f_enroute','f_towmiles','f_tolls','f_oop','f_addl'].forEach(id=>{
-  $(id).addEventListener('input', recalcStrip);
-});
-
-$('btnMember').addEventListener('click', ()=>{
-  membership='member';
-  $('btnMember').classList.add('active');
-  $('btnNonmember').classList.remove('active');
-});
-$('btnNonmember').addEventListener('click', ()=>{
-  membership='nonmember';
-  $('btnNonmember').classList.add('active');
-  $('btnMember').classList.remove('active');
-});
-
-function todayStr(){
-  const d = new Date();
-  return d.toISOString().slice(0,10);
+function readForm(){
+  return {
+    enroute: parseFloat($('f_enroute').value)||0,
+    loaded: parseFloat($('f_loaded').value)||0,
+    tollsEnroute: parseFloat($('f_tolls_enroute').value)||0,
+    tollsLoaded: parseFloat($('f_tolls_loaded').value)||0,
+    tier: tier
+  };
 }
-$('f_date').value = todayStr();
+
+function recalc(){
+  const vals = readForm();
+  const c = calcJob(vals);
+  $('calc_enroute').textContent = fmtMoney(c.enrouteCharge);
+  $('calc_loaded').textContent = fmtMoney(c.loadedCharge);
+  $('calc_tolls').textContent = fmtMoney(c.tollsTotal);
+  $('calc_jobtotal').textContent = fmtMoney(c.jobTotal);
+  const override = $('f_oop_override').value;
+  const oopDisplay = override !== '' ? parseFloat(override)||0 : c.oop;
+  $('calc_oop').textContent = fmtMoney(oopDisplay);
+  return c;
+}
+
+['f_enroute','f_loaded','f_tolls_enroute','f_tolls_loaded','f_oop_override'].forEach(id=>{
+  $(id).addEventListener('input', recalc);
+});
+
+document.querySelectorAll('.tier-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    tier = btn.getAttribute('data-tier');
+    recalc();
+  });
+});
 
 $('resetBtn').addEventListener('click', ()=>{
   $('jobForm').reset();
-  $('f_date').value = todayStr();
-  membership='member';
-  $('btnMember').classList.add('active');
-  $('btnNonmember').classList.remove('active');
-  recalcStrip();
+  tier = 'basic';
+  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  $('tierBasic').classList.add('active');
+  recalc();
 });
 
-async function loadJobs(){
+function loadJobs(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    jobs = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){
-    jobs = [];
-  }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    jobs = raw ? JSON.parse(raw) : [];
+  }catch(e){ jobs = []; }
   render();
 }
-
-async function saveJobs(){
+function saveJobs(){
   try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(jobs), false);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
   }catch(e){
-    console.error('Storage error', e);
-    alert('Could not save. Your job list may not persist.');
+    alert('Could not save locally. Your browser storage may be full or blocked.');
   }
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function tierLabel(t){
+  return {basic:'Basic',plus:'Plus',premier:'Premier',nonmember:'Non-Member'}[t]||t;
 }
 
 function render(){
@@ -272,38 +340,38 @@ function render(){
   if(!jobs.length){
     wrap.innerHTML = '<div class="empty">No jobs logged yet. Fill out the form above to add your first one.</div>';
   } else {
-    const sorted = [...jobs].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+    const sorted = [...jobs].sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
     let rows = sorted.map(j=>{
-      const total = (j.tolls||0)+(j.oop||0)+(j.addl||0);
-      const miles = (j.enroute||0)+(j.towmiles||0);
       return `<tr>
-        <td>${j.date}${j.time ? ' '+j.time : ''}</td>
-        <td>${j.name || '—'}</td>
-        <td><span class="pill ${j.membership==='member'?'member':'nonmember'}">${j.membership==='member'?'Member':'Non-Member'}</span>${j.membernum ? '<div class="notes-cell">'+escapeHtml(j.membernum)+'</div>' : ''}</td>
-        <td>${fmtMiles(j.enroute||0)}</td>
-        <td>${fmtMiles(j.towmiles||0)}</td>
-        <td>${fmtMiles(miles)}</td>
-        <td>${fmtMoney(j.tolls||0)}</td>
-        <td>${fmtMoney(j.oop||0)}</td>
-        <td>${fmtMoney(j.addl||0)}${j.addldesc ? '<div class="notes-cell">'+escapeHtml(j.addldesc)+'</div>' : ''}</td>
-        <td class="rowtotal">${fmtMoney(total)}</td>
-        <td class="notes-cell">${escapeHtml(j.notes||'')}</td>
+        <td>${escapeHtml(j.jobid)}</td>
+        <td>${escapeHtml(j.calltype)}</td>
+        <td>${escapeHtml(j.name)}</td>
+        <td>${escapeHtml(j.phone)}</td>
+        <td>${escapeHtml(j.pickup)} → ${escapeHtml(j.dropoff)}</td>
+        <td>${fmtMiles(j.enroute)}</td>
+        <td>${fmtMiles(j.loaded)}</td>
+        <td>${fmtMoney(j.tollsEnroute+j.tollsLoaded)}</td>
+        <td><span class="pill ${j.tier}">${tierLabel(j.tier)}</span></td>
+        <td>${escapeHtml(j.driver)}</td>
+        <td>${escapeHtml(j.paymethod)}</td>
+        <td class="rowtotal">${fmtMoney(j.oop)}</td>
         <td><button class="del-btn" data-id="${j.id}" title="Delete">✕</button></td>
       </tr>`;
     }).join('');
     wrap.innerHTML = `<table>
       <thead><tr>
-        <th>Date</th><th>Customer</th><th>Status</th><th>En Route</th><th>Tow</th><th>Total Mi</th>
-        <th>Tolls</th><th>Out-of-Pocket</th><th>Additional</th><th>Job Total</th><th>Notes</th><th></th>
+        <th>Job ID</th><th>Call Type</th><th>Customer</th><th>Phone</th><th>Route</th>
+        <th>En Route Mi</th><th>Loaded Mi</th><th>Tolls</th><th>Tier</th><th>Driver</th>
+        <th>Payment</th><th>Out of Pocket</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
     wrap.querySelectorAll('.del-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+      btn.addEventListener('click', ()=>{
         const id = btn.getAttribute('data-id');
         if(confirm('Delete this job entry?')){
           jobs = jobs.filter(j=>j.id!==id);
-          await saveJobs();
+          saveJobs();
           render();
         }
       });
@@ -312,48 +380,55 @@ function render(){
   updateStats();
 }
 
-function escapeHtml(s){
-  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 function updateStats(){
   const count = jobs.length;
-  const miles = jobs.reduce((a,j)=>a+(j.enroute||0)+(j.towmiles||0),0);
-  const cash = jobs.reduce((a,j)=>a+(j.tolls||0)+(j.oop||0)+(j.addl||0),0);
+  const miles = jobs.reduce((a,j)=>a+(j.enroute||0)+(j.loaded||0),0);
+  const oop = jobs.reduce((a,j)=>a+(j.oop||0),0);
   $('statCount').textContent = count;
   $('statMiles').textContent = fmtMiles(miles);
-  $('statCash').textContent = fmtMoney(cash).replace('.00','');
+  $('statOOP').textContent = fmtMoney(oop).replace('.00','');
 }
 
-$('jobForm').addEventListener('submit', async (e)=>{
+$('jobForm').addEventListener('submit', (e)=>{
   e.preventDefault();
+  const vals = readForm();
+  const c = calcJob(vals);
+  const overrideRaw = $('f_oop_override').value;
+  const oopFinal = overrideRaw !== '' ? (parseFloat(overrideRaw)||0) : c.oop;
+
   const job = {
     id: Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-    date: $('f_date').value || todayStr(),
-    time: $('f_time').value,
+    createdAt: new Date().toISOString(),
+    jobid: $('f_jobid').value.trim(),
+    dispatcher: $('f_dispatcher').value.trim(),
+    driver: $('f_driver').value.trim(),
+    calltype: $('f_calltype').value,
     name: $('f_name').value.trim(),
-    membership: membership,
-    membernum: $('f_membernum').value.trim(),
-    enroute: parseFloat($('f_enroute').value)||0,
-    towmiles: parseFloat($('f_towmiles').value)||0,
-    tolls: parseFloat($('f_tolls').value)||0,
-    oop: parseFloat($('f_oop').value)||0,
-    addldesc: $('f_addldesc').value.trim(),
-    addl: parseFloat($('f_addl').value)||0,
+    email: $('f_email').value.trim(),
+    phone: $('f_phone').value.trim(),
+    pickup: $('f_pickup').value.trim(),
+    dropoff: $('f_dropoff').value.trim(),
+    enroute: vals.enroute,
+    loaded: vals.loaded,
+    tollsEnroute: vals.tollsEnroute,
+    tollsLoaded: vals.tollsLoaded,
+    tier: vals.tier,
+    paymethod: $('f_paymethod').value,
+    jobTotal: c.jobTotal,
+    oop: oopFinal,
     notes: $('f_notes').value.trim()
   };
   jobs.push(job);
-  await saveJobs();
+  saveJobs();
   $('jobForm').reset();
-  $('f_date').value = todayStr();
-  membership='member';
-  $('btnMember').classList.add('active');
-  $('btnNonmember').classList.remove('active');
-  recalcStrip();
+  tier = 'basic';
+  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  $('tierBasic').classList.add('active');
+  recalc();
   render();
 });
 
-recalcStrip();
+recalc();
 loadJobs();
 </script>
 </body>
