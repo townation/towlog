@@ -32,6 +32,9 @@
   header .inner{max-width:1080px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;}
   .eyebrow{font-family:'Oswald',sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--amber);margin:0 0 6px;}
   h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:34px;margin:0;letter-spacing:.01em;text-transform:uppercase;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;}
+  .report-btn{background:transparent;border:1.5px solid var(--amber);color:var(--amber);padding:9px 16px;border-radius:5px;font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;font-family:'Oswald',sans-serif;}
+  .report-btn:hover{background:var(--amber);color:var(--asphalt);}
   .stats{display:flex;gap:26px;}
   .stat{text-align:right;}
   .stat .n{font-family:'Oswald',sans-serif;font-size:26px;font-weight:600;color:var(--amber);line-height:1;}
@@ -119,11 +122,36 @@
   .empty{padding:40px 10px;text-align:center;color:var(--paper-dim);font-size:14px;}
   .tablewrap{overflow-x:auto;}
 
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,11,12,0.75);z-index:100;padding:20px;overflow-y:auto;}
+  .modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+  .modal{background:var(--asphalt-2);border:1px solid var(--amber);border-radius:8px;max-width:900px;width:100%;padding:24px;margin-top:30px;}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .modal-header h2{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:20px;margin:0;color:var(--amber);}
+  .modal-close{background:none;border:none;color:var(--paper-dim);font-size:20px;cursor:pointer;line-height:1;}
+  .modal-close:hover{color:var(--paper);}
+  .report-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .report-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;}
+  .report-tab{background:none;border:none;color:var(--paper-dim);padding:10px 16px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:12.5px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .report-tab.active{color:var(--amber);border-bottom-color:var(--amber);}
+  .report-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:8px;}
+  .report-stat{background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:14px;text-align:center;}
+  .report-stat .v{font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;color:var(--amber);}
+  .report-stat .l{font-size:10.5px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+  .report-table-wrap{overflow-x:auto;}
+  .driver-breakdown{margin-top:18px;}
+  .driver-breakdown h3{font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--paper-dim);margin:0 0 8px;}
+
   @media(max-width:720px){
     form{grid-template-columns:repeat(2,1fr);}
     .field.span2,.field.span4,.section-label,.breakdown,.actions{grid-column:span 2;}
     .tier-row{flex-direction:column;}
     .stats{gap:16px;}
+    .header-right{align-items:stretch;width:100%;}
+    .report-btn{width:100%;}
+    .stats{justify-content:space-between;}
+    .report-controls{grid-template-columns:1fr 1fr;}
+    .report-summary{grid-template-columns:1fr 1fr;}
+    .modal{padding:18px;margin-top:10px;}
   }
 </style>
 </head>
@@ -134,11 +162,14 @@
       <p class="eyebrow">Roadside &amp; Recovery</p>
       <h1>Tow Job Log</h1>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
-      <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
-      <div class="stat"><div class="n" id="statAAA">$0</div><div class="l">AAA Paid</div></div>
-      <div class="stat"><div class="n" id="statOOP">$0</div><div class="l">Out of Pocket</div></div>
+    <div class="header-right">
+      <button type="button" class="report-btn" id="reportBtn">Driver Pay Report</button>
+      <div class="stats">
+        <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
+        <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
+        <div class="stat"><div class="n" id="statAAA">$0</div><div class="l">AAA Paid</div></div>
+        <div class="stat"><div class="n" id="statOOP">$0</div><div class="l">Out of Pocket</div></div>
+      </div>
     </div>
   </div>
 </header>
@@ -313,6 +344,49 @@
     <div class="tablewrap" id="tableWrap"><div class="empty">Loading...</div></div>
   </div>
 
+</div>
+
+<div class="modal-overlay" id="reportOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Driver Pay Report</h2>
+      <button type="button" class="modal-close" id="reportClose">✕</button>
+    </div>
+
+    <div class="report-controls">
+      <div class="field">
+        <label>From Date</label>
+        <input type="date" id="reportFrom">
+      </div>
+      <div class="field">
+        <label>To Date</label>
+        <input type="date" id="reportTo">
+      </div>
+      <div class="field">
+        <label>Driver</label>
+        <select id="reportDriver">
+          <option value="">All Drivers</option>
+          <option>Rocky</option>
+          <option>Terry</option>
+          <option>Christin</option>
+          <option>Danny</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button type="button" class="primary" id="reportGenerate">Generate Report</button>
+      </div>
+    </div>
+
+    <div class="report-tabs">
+      <button type="button" class="report-tab active" data-view="summary" id="tabSummary">Summary</button>
+      <button type="button" class="report-tab" data-view="detailed" id="tabDetailed">Detailed Report</button>
+    </div>
+
+    <div class="report-body" id="reportBody">
+      <div class="empty">Choose a date range and hit Generate Report.</div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -774,6 +848,152 @@ function attachAddressAutocomplete(inputId, panelId){
 
 attachAddressAutocomplete('f_pickup', 'f_pickup_panel');
 attachAddressAutocomplete('f_dropoff', 'f_dropoff_panel');
+
+// --- Driver Pay Report ---
+const DRIVER_PAY_RATE = 0.30; // 30% of billing, tolls excluded from this cut
+
+let reportView = 'summary';
+
+$('reportBtn').addEventListener('click', ()=>{
+  $('reportOverlay').classList.add('open');
+});
+$('reportClose').addEventListener('click', ()=>{
+  $('reportOverlay').classList.remove('open');
+});
+$('reportOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'reportOverlay') $('reportOverlay').classList.remove('open');
+});
+
+document.querySelectorAll('.report-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.report-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    reportView = btn.getAttribute('data-view');
+    renderReport();
+  });
+});
+
+$('reportGenerate').addEventListener('click', renderReport);
+
+function jobDateStr(j){
+  // createdAt is an ISO timestamp; compare by calendar date (local)
+  return (j.createdAt || '').slice(0,10);
+}
+
+function getFilteredJobs(){
+  const from = $('reportFrom').value;
+  const to = $('reportTo').value;
+  const driverFilter = $('reportDriver').value;
+  return jobs.filter(j=>{
+    const d = jobDateStr(j);
+    if(from && d < from) return false;
+    if(to && d > to) return false;
+    if(driverFilter && j.driver !== driverFilter) return false;
+    return true;
+  });
+}
+
+function jobTolls(j){
+  return (j.tollsEnroute||0) + (j.tollsLoaded||0);
+}
+function jobDriverPay(j){
+  const billing = j.jobTotal || 0;
+  const tolls = jobTolls(j);
+  return Math.max(0, billing - tolls) * DRIVER_PAY_RATE;
+}
+
+function renderReport(){
+  const filtered = getFilteredJobs();
+  const body = $('reportBody');
+
+  if(!filtered.length){
+    body.innerHTML = '<div class="empty">No jobs found for that date range / driver.</div>';
+    return;
+  }
+
+  if(reportView === 'summary'){
+    renderSummaryView(filtered, body);
+  } else {
+    renderDetailedView(filtered, body);
+  }
+}
+
+function renderSummaryView(filtered, body){
+  const totalBilling = filtered.reduce((a,j)=>a+(j.jobTotal||0),0);
+  const totalTolls = filtered.reduce((a,j)=>a+jobTolls(j),0);
+  const totalPay = filtered.reduce((a,j)=>a+jobDriverPay(j),0);
+
+  // Per-driver breakdown
+  const byDriver = {};
+  filtered.forEach(j=>{
+    const key = j.driver || 'Unassigned';
+    if(!byDriver[key]) byDriver[key] = {jobs:0, billing:0, tolls:0, pay:0};
+    byDriver[key].jobs += 1;
+    byDriver[key].billing += (j.jobTotal||0);
+    byDriver[key].tolls += jobTolls(j);
+    byDriver[key].pay += jobDriverPay(j);
+  });
+
+  const driverRows = Object.keys(byDriver).sort().map(name=>{
+    const d = byDriver[name];
+    return `<tr>
+      <td>${escapeHtml(name)}</td>
+      <td>${d.jobs}</td>
+      <td>${fmtMoney(d.billing)}</td>
+      <td>${fmtMoney(d.tolls)}</td>
+      <td class="rowtotal">${fmtMoney(d.pay)}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="report-summary">
+      <div class="report-stat"><div class="v">${filtered.length}</div><div class="l">Jobs</div></div>
+      <div class="report-stat"><div class="v">${fmtMoney(totalBilling)}</div><div class="l">Total Billing</div></div>
+      <div class="report-stat"><div class="v">${fmtMoney(totalTolls)}</div><div class="l">Total Tolls</div></div>
+      <div class="report-stat"><div class="v" style="color:var(--good);">${fmtMoney(totalPay)}</div><div class="l">Driver Pay (30%, excl. tolls)</div></div>
+    </div>
+    <div class="driver-breakdown">
+      <h3>By Driver</h3>
+      <div class="report-table-wrap">
+        <table>
+          <thead><tr><th>Driver</th><th>Jobs</th><th>Total Billing</th><th>Tolls</th><th>Driver Pay</th></tr></thead>
+          <tbody>${driverRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderDetailedView(filtered, body){
+  const sorted = [...filtered].sort((a,b)=> jobDateStr(a).localeCompare(jobDateStr(b)));
+  const rows = sorted.map(j=>{
+    const billing = j.jobTotal || 0;
+    const tolls = jobTolls(j);
+    const pay = jobDriverPay(j);
+    return `<tr>
+      <td>${escapeHtml(j.jobid)}</td>
+      <td>${jobDateStr(j)}</td>
+      <td>${escapeHtml(j.driver)}</td>
+      <td>${fmtMoney(billing)}</td>
+      <td>${fmtMoney(tolls)}</td>
+      <td class="rowtotal">${fmtMoney(pay)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPay = filtered.reduce((a,j)=>a+jobDriverPay(j),0);
+
+  body.innerHTML = `
+    <div class="report-table-wrap">
+      <table>
+        <thead><tr><th>Job ID</th><th>Date</th><th>Driver</th><th>Total Billing</th><th>Tolls</th><th>30% (excl. tolls)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="report-summary" style="grid-template-columns:1fr;margin-top:14px;">
+      <div class="report-stat"><div class="v" style="color:var(--good);">${fmtMoney(totalPay)}</div><div class="l">Total Driver Pay for Selected Range</div></div>
+    </div>
+  `;
+}
 
 recalc();
 loadJobs();
