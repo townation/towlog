@@ -967,6 +967,12 @@ $('jobForm').addEventListener('submit', async (e)=>{
     nmLoadedRate: vals.tier === 'nonmember' ? vals.nmLoadedRate : null,
     loggedInAs: (getCurrentUser() ? getCurrentUser().username : null)
   };
+  // Job ID is the primary key: if this Job ID already exists locally, drop the
+  // old entry so only the most recent submission for that Job ID is shown —
+  // this mirrors how the Sheets backend dedupes on save.
+  if(job.jobid && job.jobid.trim() !== ''){
+    jobs = jobs.filter(j => j.jobid !== job.jobid);
+  }
   jobs.push(job);
   saveJobsLocal();
   $('jobForm').reset();
