@@ -60,6 +60,8 @@
   input:focus,textarea:focus,select:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);}
 
   .tier-row{display:flex;gap:8px;grid-column:span 4;}
+  .nm-rates-row{display:flex;gap:12px;grid-column:span 4;}
+  .nm-rates-row .field{flex:1;}
   .tier-btn{flex:1;padding:12px 10px;border-radius:6px;border:1px solid var(--line);background:var(--steel);color:var(--paper-dim);cursor:pointer;font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.03em;}
   .tier-btn small{display:block;font-weight:400;text-transform:none;letter-spacing:0;font-size:10.5px;margin-top:3px;opacity:.8;}
   .tier-btn.active{background:var(--amber);color:var(--asphalt);border-color:var(--amber);}
@@ -279,6 +281,24 @@
         </div>
       </div>
 
+      <div class="field span4" id="nonMemberRatesField" style="display:none;">
+        <label>Non-Member Rates (editable)</label>
+        <div class="nm-rates-row">
+          <div class="field">
+            <label>Hookup Fee ($)</label>
+            <input type="number" id="f_nm_hookup" min="0" step="0.01" value="65.00">
+          </div>
+          <div class="field">
+            <label>En Route Rate ($/mi)</label>
+            <input type="number" id="f_nm_enroute_rate" min="0" step="0.01" value="2.50">
+          </div>
+          <div class="field">
+            <label>Loaded Rate ($/mi)</label>
+            <input type="number" id="f_nm_loaded_rate" min="0" step="0.01" value="7.00">
+          </div>
+        </div>
+      </div>
+
       <div class="section-label">Extras</div>
       <div class="field span4">
         <label>Additional Service Items</label>
@@ -302,6 +322,7 @@
           <option>Debit Card</option>
           <option>Check</option>
           <option>Zelle / Venmo</option>
+          <option>AAA</option>
           <option>Other</option>
         </select>
       </div>
@@ -481,7 +502,7 @@ document.addEventListener('click', (e)=>{
 // Loaded (tow) miles: first 5 free. Beyond that, each mile is either
 // covered by AAA ($3.50/mi) or paid by the member out of pocket ($7/mi),
 // depending on tier coverage.
-function loadedMileageSplit(miles, tier, premierVisit){
+function loadedMileageSplit(miles, tier, premierVisit, nmLoadedRate){
   const billable = Math.max(0, miles - 5);
   let aaaMiles = 0, memberMiles = 0;
   if(tier === 'basic'){
@@ -505,8 +526,9 @@ function loadedMileageSplit(miles, tier, premierVisit){
   } else if(tier === 'nonmember'){
     memberMiles = billable; // no AAA coverage at all
   }
+  const memberRate = (tier === 'nonmember') ? (nmLoadedRate ?? 7) : 7;
   const aaaCharge = aaaMiles * 3.50;
-  const memberCharge = memberMiles * 7;
+  const memberCharge = memberMiles * memberRate;
   return {aaaMiles, memberMiles, aaaCharge, memberCharge, totalCharge: aaaCharge + memberCharge};
 }
 
@@ -514,13 +536,18 @@ function calcJob(vals){
   const enroute = vals.enroute, loaded = vals.loaded;
   const tollsTotal = vals.tollsEnroute + vals.tollsLoaded;
   const extrasCharge = (vals.extras ? vals.extras.length : 0) * EXTRA_FEE;
+  const isNonmember = vals.tier === 'nonmember';
 
-  // En route miles: flat job-cost rate, not billed to the member directly.
-  const enrouteCharge = Math.max(0, enroute-5) * 2.50;
+  const hookupFee = isNonmember ? (vals.nmHookup ?? HOOKUP_FEE) : HOOKUP_FEE;
+  const enrouteRate = isNonmember ? (vals.nmEnrouteRate ?? 2.50) : 2.50;
 
-  const loadedSplit = loadedMileageSplit(loaded, vals.tier, vals.premierVisit);
+  // En route miles: flat job-cost rate, not billed to the member directly
+  // (except for Non-Member jobs, where the rate is editable and the member covers it).
+  const enrouteCharge = Math.max(0, enroute-5) * enrouteRate;
+
+  const loadedSplit = loadedMileageSplit(loaded, vals.tier, vals.premierVisit, vals.nmLoadedRate);
   const loadedCharge = loadedSplit.totalCharge;
-  const jobTotal = HOOKUP_FEE + extrasCharge + enrouteCharge + loadedCharge + tollsTotal;
+  const jobTotal = hookupFee + extrasCharge + enrouteCharge + loadedCharge + tollsTotal;
 
   const wentIntoOverage = loadedSplit.memberMiles > 0;
 
@@ -532,7 +559,7 @@ function calcJob(vals){
   } else if(vals.tier === 'premier'){
     oopTolls = wentIntoOverage ? tollsTotal : 0;
   } else if(vals.tier === 'nonmember'){
-    oopHookup = HOOKUP_FEE;
+    oopHookup = hookupFee;
     oopTolls = tollsTotal;
     oopEnroute = enrouteCharge; // no AAA at all, so the member covers this too
     oopExtras = extrasCharge;
@@ -540,7 +567,7 @@ function calcJob(vals){
   const oopMiles = loadedSplit.memberCharge + oopEnroute;
   const oop = oopHookup + oopMiles + oopTolls + oopExtras;
   const aaaPays = jobTotal - oop;
-  return {enrouteCharge, loadedCharge, tollsTotal, extrasCharge, jobTotal, oop, oopHookup, oopMiles, oopTolls, oopExtras, aaaPays};
+  return {enrouteCharge, loadedCharge, tollsTotal, extrasCharge, jobTotal, oop, oopHookup, oopMiles, oopTolls, oopExtras, aaaPays, hookupFee};
 }
 
 function readForm(){
@@ -551,7 +578,10 @@ function readForm(){
     tollsLoaded: parseFloat($('f_tolls_loaded').value)||0,
     tier: tier,
     premierVisit: premierVisit,
-    extras: selectedExtras
+    extras: selectedExtras,
+    nmHookup: parseFloat($('f_nm_hookup').value),
+    nmEnrouteRate: parseFloat($('f_nm_enroute_rate').value),
+    nmLoadedRate: parseFloat($('f_nm_loaded_rate').value)
   };
 }
 
@@ -560,7 +590,7 @@ let oopManuallyEdited = false;
 function recalc(){
   const vals = readForm();
   const c = calcJob(vals);
-  $('calc_hookup').textContent = fmtMoney(HOOKUP_FEE);
+  $('calc_hookup').textContent = fmtMoney(c.hookupFee);
   $('calc_extras_count').textContent = vals.extras.length;
   $('calc_extras').textContent = fmtMoney(c.extrasCharge);
   $('calc_enroute').textContent = fmtMoney(c.enrouteCharge);
@@ -603,8 +633,13 @@ document.querySelectorAll('.tier-row .tier-btn:not(.visit-btn)').forEach(btn=>{
     btn.classList.add('active');
     tier = btn.getAttribute('data-tier');
     $('premierVisitField').style.display = (tier === 'premier') ? 'block' : 'none';
+    $('nonMemberRatesField').style.display = (tier === 'nonmember') ? 'block' : 'none';
     recalc();
   });
+});
+
+['f_nm_hookup','f_nm_enroute_rate','f_nm_loaded_rate'].forEach(id=>{
+  $(id).addEventListener('input', recalc);
 });
 
 document.querySelectorAll('.visit-btn').forEach(btn=>{
@@ -625,6 +660,7 @@ $('resetBtn').addEventListener('click', ()=>{
   document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
   $('visitFirst').classList.add('active');
   $('premierVisitField').style.display = 'none';
+  $('nonMemberRatesField').style.display = 'none';
   selectedExtras = [];
   renderExtrasChips();
   renderExtrasList('');
@@ -753,6 +789,7 @@ $('jobForm').addEventListener('submit', (e)=>{
   document.querySelectorAll('.visit-btn').forEach(b=>b.classList.remove('active'));
   $('visitFirst').classList.add('active');
   $('premierVisitField').style.display = 'none';
+  $('nonMemberRatesField').style.display = 'none';
   selectedExtras = [];
   renderExtrasChips();
   renderExtrasList('');
@@ -808,7 +845,7 @@ function attachAddressAutocomplete(inputId, panelId){
       panel.innerHTML = '<div class="addr-loading">Searching...</div>';
       panel.classList.add('open');
       try{
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&q=${encodeURIComponent(q)}`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=us&q=${encodeURIComponent(q)}`;
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         const data = await res.json();
         // Only render if the input hasn't changed since this request started
