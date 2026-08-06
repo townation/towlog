@@ -804,7 +804,7 @@ async function loadJobs(){
         jobs = data.jobs || [];
         // keep a local cache as an offline fallback
         try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs)); }catch(e){}
-        render();
+        safeRender();
         return;
       }
     }catch(e){
@@ -816,7 +816,19 @@ async function loadJobs(){
     const raw = localStorage.getItem(STORAGE_KEY);
     jobs = raw ? JSON.parse(raw) : [];
   }catch(e){ jobs = []; }
-  render();
+  safeRender();
+}
+
+// Wrapper so a rendering bug can never leave the table frozen on "Loading..." —
+// worst case it shows a visible error instead of hanging silently.
+function safeRender(){
+  try{
+    render();
+  }catch(err){
+    console.error('Render failed:', err);
+    const wrap = $('tableWrap');
+    if(wrap) wrap.innerHTML = '<div class="empty" style="color:var(--safety-red);">Something went wrong displaying the job list. Check the browser console, or contact support.</div>';
+  }
 }
 
 function saveJobsLocal(){
@@ -863,10 +875,19 @@ async function deleteJobFromSheet(jobid){
 }
 
 function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const str = (s === null || s === undefined) ? '' : String(s);
+  return str.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function tierLabel(t){
   return {basic:'Basic',plus:'Plus',premier:'Premier',nonmember:'Non-Member'}[t]||t;
+}
+
+function normalizeExtras(x){
+  if(Array.isArray(x)) return x;
+  if(typeof x === 'string' && x.trim().startsWith('[')){
+    try{ return JSON.parse(x); }catch(e){ return []; }
+  }
+  return [];
 }
 
 function render(){
@@ -874,25 +895,37 @@ function render(){
   if(!jobs.length){
     wrap.innerHTML = '<div class="empty">No jobs logged yet. Fill out the form above to add your first one.</div>';
   } else {
-    const sorted = [...jobs].sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+    const sorted = [...jobs].sort((a,b)=> String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
     let rows = sorted.map(j=>{
-      return `<tr>
-        <td>${escapeHtml(j.jobid)}</td>
-        <td>${escapeHtml(j.calltype)}</td>
-        <td>${escapeHtml(j.name)}</td>
-        <td>${escapeHtml(j.phone)}</td>
-        <td>${escapeHtml(j.pickup)} → ${escapeHtml(j.dropoff)}</td>
-        <td>${fmtMiles(j.enroute)}</td>
-        <td>${fmtMiles(j.loaded)}</td>
-        <td>${fmtMoney(j.tollsEnroute+j.tollsLoaded)}</td>
-        <td><span class="pill ${j.tier}">${tierLabel(j.tier)}</span></td>
-        <td title="${escapeHtml((j.extras||[]).join(', '))}">${(j.extras&&j.extras.length) ? j.extras.length + ' item' + (j.extras.length>1?'s':'') : '—'}</td>
-        <td>${escapeHtml(j.driver)}</td>
-        <td>${escapeHtml(j.paymethod)}</td>
-        <td>${fmtMoney(j.jobTotal - j.oop)}</td>
-        <td class="rowtotal">${fmtMoney(j.oop)}</td>
-        <td><button class="del-btn" data-id="${j.id}" title="Delete">✕</button></td>
-      </tr>`;
+      try{
+        const extras = normalizeExtras(j.extras);
+        const enroute = Number(j.enroute)||0;
+        const loaded = Number(j.loaded)||0;
+        const tollsEnroute = Number(j.tollsEnroute)||0;
+        const tollsLoaded = Number(j.tollsLoaded)||0;
+        const jobTotal = Number(j.jobTotal)||0;
+        const oop = Number(j.oop)||0;
+        return `<tr>
+          <td>${escapeHtml(j.jobid)}</td>
+          <td>${escapeHtml(j.calltype)}</td>
+          <td>${escapeHtml(j.name)}</td>
+          <td>${escapeHtml(j.phone)}</td>
+          <td>${escapeHtml(j.pickup)} → ${escapeHtml(j.dropoff)}</td>
+          <td>${fmtMiles(enroute)}</td>
+          <td>${fmtMiles(loaded)}</td>
+          <td>${fmtMoney(tollsEnroute+tollsLoaded)}</td>
+          <td><span class="pill ${escapeHtml(j.tier)}">${tierLabel(j.tier)}</span></td>
+          <td title="${escapeHtml(extras.join(', '))}">${extras.length ? extras.length + ' item' + (extras.length>1?'s':'') : '—'}</td>
+          <td>${escapeHtml(j.driver)}</td>
+          <td>${escapeHtml(j.paymethod)}</td>
+          <td>${fmtMoney(jobTotal - oop)}</td>
+          <td class="rowtotal">${fmtMoney(oop)}</td>
+          <td><button class="del-btn" data-id="${escapeHtml(j.id)}" title="Delete">✕</button></td>
+        </tr>`;
+      }catch(err){
+        console.error('Skipped a job row that failed to render:', j, err);
+        return `<tr><td colspan="15" style="color:var(--safety-red);">Could not display job "${escapeHtml(j.jobid)}" — data may be malformed.</td></tr>`;
+      }
     }).join('');
     wrap.innerHTML = `<table>
       <thead><tr>
@@ -909,7 +942,7 @@ function render(){
         if(confirm('Delete this job entry?')){
           jobs = jobs.filter(j=>j.id!==id);
           saveJobsLocal();
-          render();
+          safeRender();
           if(targetJob){
             const ok = await deleteJobFromSheet(targetJob.jobid);
             if(!ok) console.warn('Job removed locally but could not sync deletion to Sheets.');
@@ -989,7 +1022,7 @@ $('jobForm').addEventListener('submit', async (e)=>{
   renderExtrasList('');
   oopManuallyEdited = false;
   recalc();
-  render();
+  safeRender();
 
   if(getSyncUrl()){
     const ok = await syncJobToSheet(job);
