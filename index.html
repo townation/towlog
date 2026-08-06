@@ -78,6 +78,14 @@
   .extras-chip{background:rgba(245,166,35,0.14);color:var(--amber);border:1px solid var(--amber-dim);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
   .extras-chip button{background:none;border:none;color:var(--amber);cursor:pointer;font-size:13px;line-height:1;padding:0;}
 
+  .addr-wrap{position:relative;}
+  .addr-panel{display:none;position:absolute;z-index:25;top:calc(100% + 4px);left:0;right:0;background:var(--asphalt-2);border:1px solid var(--amber);border-radius:6px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .addr-panel.open{display:block;}
+  .addr-item{padding:9px 12px;font-size:13px;color:var(--paper-dim);cursor:pointer;border-bottom:1px solid var(--line);}
+  .addr-item:last-child{border-bottom:none;}
+  .addr-item:hover, .addr-item.highlighted{background:rgba(245,166,35,0.1);color:var(--paper);}
+  .addr-loading{padding:9px 12px;font-size:12.5px;color:var(--paper-dim);font-style:italic;}
+
   .breakdown{grid-column:span 4;background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-top:6px;}
   .breakdown .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--paper-dim);}
   .breakdown .row span:last-child{color:var(--paper);font-family:'Oswald',sans-serif;}
@@ -193,11 +201,17 @@
 
       <div class="field span2">
         <label>Pickup Location</label>
-        <input type="text" id="f_pickup">
+        <div class="addr-wrap">
+          <input type="text" id="f_pickup" autocomplete="off" placeholder="Start typing an address...">
+          <div class="addr-panel" id="f_pickup_panel"></div>
+        </div>
       </div>
       <div class="field span2">
         <label>Drop-off Location</label>
-        <input type="text" id="f_dropoff">
+        <div class="addr-wrap">
+          <input type="text" id="f_dropoff" autocomplete="off" placeholder="Start typing an address...">
+          <div class="addr-panel" id="f_dropoff_panel"></div>
+        </div>
       </div>
 
       <div class="section-label">Mileage &amp; Tolls</div>
@@ -672,6 +686,94 @@ $('jobForm').addEventListener('submit', (e)=>{
   recalc();
   render();
 });
+
+// --- Address autocomplete (OpenStreetMap Nominatim, free, no API key) ---
+function attachAddressAutocomplete(inputId, panelId){
+  const input = $(inputId);
+  const panel = $(panelId);
+  let debounceTimer = null;
+  let currentResults = [];
+  let highlightedIndex = -1;
+
+  function closePanel(){
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    highlightedIndex = -1;
+  }
+
+  function renderResults(results){
+    currentResults = results;
+    highlightedIndex = -1;
+    if(!results.length){
+      panel.innerHTML = '<div class="addr-loading">No matches found</div>';
+      panel.classList.add('open');
+      return;
+    }
+    panel.innerHTML = results.map((r,i)=>
+      `<div class="addr-item" data-idx="${i}">${escapeHtml(r.display_name)}</div>`
+    ).join('');
+    panel.classList.add('open');
+    panel.querySelectorAll('.addr-item').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        const idx = parseInt(el.getAttribute('data-idx'));
+        input.value = currentResults[idx].display_name;
+        closePanel();
+      });
+    });
+  }
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim();
+    clearTimeout(debounceTimer);
+    if(q.length < 3){
+      closePanel();
+      return;
+    }
+    debounceTimer = setTimeout(async ()=>{
+      panel.innerHTML = '<div class="addr-loading">Searching...</div>';
+      panel.classList.add('open');
+      try{
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        // Only render if the input hasn't changed since this request started
+        if(input.value.trim() === q){
+          renderResults(data);
+        }
+      }catch(e){
+        panel.innerHTML = '<div class="addr-loading">Search unavailable — type the address manually</div>';
+      }
+    }, 400);
+  });
+
+  input.addEventListener('keydown', (e)=>{
+    const items = panel.querySelectorAll('.addr-item');
+    if(!items.length) return;
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      highlightedIndex = Math.min(highlightedIndex+1, items.length-1);
+      items.forEach((el,i)=>el.classList.toggle('highlighted', i===highlightedIndex));
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex-1, 0);
+      items.forEach((el,i)=>el.classList.toggle('highlighted', i===highlightedIndex));
+    } else if(e.key === 'Enter' && highlightedIndex >= 0){
+      e.preventDefault();
+      input.value = currentResults[highlightedIndex].display_name;
+      closePanel();
+    } else if(e.key === 'Escape'){
+      closePanel();
+    }
+  });
+
+  input.addEventListener('blur', ()=>{
+    setTimeout(closePanel, 150); // allow mousedown on item to register first
+  });
+}
+
+attachAddressAutocomplete('f_pickup', 'f_pickup_panel');
+attachAddressAutocomplete('f_dropoff', 'f_dropoff_panel');
 
 recalc();
 loadJobs();
