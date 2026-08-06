@@ -62,6 +62,22 @@
   .tier-btn.active{background:var(--amber);color:var(--asphalt);border-color:var(--amber);}
   .tier-btn.active.nonmember{background:var(--safety-red);border-color:var(--safety-red);color:#fff;}
 
+  .extras-wrap{position:relative;}
+  .extras-toggle{width:100%;text-align:left;background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper-dim);padding:10px 11px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .extras-toggle:hover{border-color:var(--paper-dim);}
+  #extrasCount{color:var(--amber);font-weight:700;}
+  .extras-panel{display:none;position:absolute;z-index:20;top:calc(100% + 6px);left:0;right:0;background:var(--asphalt-2);border:1px solid var(--amber);border-radius:6px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .extras-panel.open{display:block;}
+  .extras-search{width:100%;background:var(--steel);border:1px solid var(--line);border-radius:5px;color:var(--paper);padding:8px 10px;font-size:13px;margin-bottom:8px;font-family:'Inter',sans-serif;}
+  .extras-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+  .extras-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:13px;color:var(--paper-dim);cursor:pointer;}
+  .extras-item:hover{background:rgba(245,166,35,0.08);color:var(--paper);}
+  .extras-item input{accent-color:var(--amber);width:15px;height:15px;flex-shrink:0;}
+  .extras-item .code{color:var(--amber-dim);font-weight:700;margin-right:2px;}
+  .extras-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .extras-chip{background:rgba(245,166,35,0.14);color:var(--amber);border:1px solid var(--amber-dim);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+  .extras-chip button{background:none;border:none;color:var(--amber);cursor:pointer;font-size:13px;line-height:1;padding:0;}
+
   .breakdown{grid-column:span 4;background:var(--steel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-top:6px;}
   .breakdown .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--paper-dim);}
   .breakdown .row span:last-child{color:var(--paper);font-family:'Oswald',sans-serif;}
@@ -113,6 +129,7 @@
     <div class="stats">
       <div class="stat"><div class="n" id="statCount">0</div><div class="l">Jobs</div></div>
       <div class="stat"><div class="n" id="statMiles">0</div><div class="l">Total Miles</div></div>
+      <div class="stat"><div class="n" id="statAAA">$0</div><div class="l">AAA Paid</div></div>
       <div class="stat"><div class="n" id="statOOP">$0</div><div class="l">Out of Pocket</div></div>
     </div>
   </div>
@@ -132,11 +149,20 @@
       </div>
       <div class="field">
         <label>Dispatcher Name</label>
-        <input type="text" id="f_dispatcher">
+        <select id="f_dispatcher">
+          <option>Patron</option>
+          <option>Rocky</option>
+          <option>Nancy</option>
+        </select>
       </div>
       <div class="field">
         <label>Driver Name</label>
-        <input type="text" id="f_driver">
+        <select id="f_driver">
+          <option>Rocky</option>
+          <option>Terry</option>
+          <option>Christin</option>
+          <option>Danny</option>
+        </select>
       </div>
       <div class="field">
         <label>Call Type</label>
@@ -200,6 +226,19 @@
         <div class="tier-btn" data-tier="nonmember" id="tierNonmember">Non-Member<small>Pays full job cost</small></div>
       </div>
 
+      <div class="section-label">Extras</div>
+      <div class="field span4">
+        <label>Additional Service Items</label>
+        <div class="extras-wrap">
+          <button type="button" class="extras-toggle" id="extrasToggle">Select extras… <span id="extrasCount"></span></button>
+          <div class="extras-panel" id="extrasPanel">
+            <input type="text" id="extrasSearch" placeholder="Search extras..." class="extras-search">
+            <div class="extras-list" id="extrasList"></div>
+          </div>
+        </div>
+        <div class="extras-chips" id="extrasChips"></div>
+      </div>
+
       <div class="section-label">Payment</div>
       <div class="field span2">
         <label>Payment Method</label>
@@ -219,8 +258,9 @@
 
       <div class="breakdown" id="breakdown">
         <div class="row"><span>Hookup Fee</span><span id="calc_hookup">$65.00</span></div>
-        <div class="row"><span>En Route Charge ($2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
-        <div class="row"><span>Loaded Charge ($3.50/mi after 5 free)</span><span id="calc_loaded">$0.00</span></div>
+        <div class="row"><span>Extras (<span id="calc_extras_count">0</span> selected, $75 each)</span><span id="calc_extras">$0.00</span></div>
+        <div class="row"><span>En Route Miles Charge ($2.50/mi after 5 free)</span><span id="calc_enroute">$0.00</span></div>
+        <div class="row"><span>Loaded Miles Charge (free 5, then $3.50 AAA / $7 member)</span><span id="calc_loaded">$0.00</span></div>
         <div class="row"><span>Tolls</span><span id="calc_tolls">$0.00</span></div>
         <div class="row total"><span>Total Job Cost</span><span id="calc_jobtotal">$0.00</span></div>
         <div class="row aaa"><span>AAA Pays</span><span id="calc_aaa">$0.00</span></div>
@@ -229,6 +269,7 @@
           <div class="row sub"><span>— Hookup Fee</span><span id="calc_oop_hookup">$0.00</span></div>
           <div class="row sub"><span>— Mileage Overage</span><span id="calc_oop_miles">$0.00</span></div>
           <div class="row sub"><span>— Tolls</span><span id="calc_oop_tolls">$0.00</span></div>
+          <div class="row sub"><span>— Extras</span><span id="calc_oop_extras">$0.00</span></div>
         </div>
       </div>
 
@@ -261,34 +302,141 @@ const fmtMoney = n => '$' + (Math.round(n*100)/100).toFixed(2);
 const fmtMiles = n => (Math.round(n*10)/10).toString();
 
 const HOOKUP_FEE = 65.00; // AAA pays this on every job, regardless of tier
+const EXTRA_FEE = 75.00; // flat charge added to the job for each selected extra
+
+const EXTRAS_OPTIONS = [
+  "TOW EXCHANGE","TOW CONVERSION","BIKE TOW","ACCIDENT ASSIST ONLY","RV TIRE SERVICE",
+  "2C-RAP 2nd TOW","CE-Calculated Enroute Mileage","CREDIT CARD","Battery Warranty",
+  "BT-Basic Member Tow Mileage","BS-BASIC","BR-PREMIER BATTERY REPLACEMENT","BC-BATTERY COUPON",
+  "BA-BASIC","TC-Tow --> LT SRV","Bringg Service Item","Misc","TC-Extrication","7H-HOME LOCKOUT",
+  "7C-7C LOCKSMITH","RAP Recip Tow","EV NO CHARGE","Long Tow","Long Tow Storage","RV Tow",
+  "Motorcycle Tow","MX-MOTORCYCLE","MW-Military Base Wait","MD-MANAGEMENT DECISIONS",
+  "MC-MANUAL CHARGE","MB-MEMBER BILLING","MA-MEDIUM DUTY TOW","LT-PREMIER LONG TOW","LK-LOCKSMITH",
+  "HEAVY DUTY TOW MILES","HEAVY DUTY","GB-OTG BONUS","FL-FUEL","ET-RAP EXTENDED TOW",
+  "ES-EXTENDED SERVICE TIME","EC-Entitlement Charge","DM-Deadhead Mileage","DL-DOLLIES",
+  "D1-REMOVE DRIVESHAFT","CT-Calculated Tow Mileage","CL-CLEAN UP","XB-Battery Store Prepaid",
+  "WN-WINCHING CHARGES","W2-WINCH 2ND TRUCK","TW-TOW MILEAGE","TL-TOLLS/PARKING","TC-Tow Conversion",
+  "T7-RAP T7 LOCKSMITH","T5-RAP Fuel","T3-RAP T3 WON'T START","T1-RAP T1 FLAT TIRE",
+  "T0-RAP GOA/Canceled Call","ST-STORAGE","RV CHARGES","RL-7A RAP LOCKSMITH","PP-PORTAL TO PORTAL",
+  "PB-PRIORITY BONUS","OP-Over Mileage Premium","OM-Enroute Miles","NY-NYC BONUS"
+];
+
+let selectedExtras = [];
+
+function renderExtrasList(filter){
+  const q = (filter||'').toLowerCase();
+  const list = $('extrasList');
+  const filtered = EXTRAS_OPTIONS.filter(opt => opt.toLowerCase().includes(q));
+  list.innerHTML = filtered.map(opt => {
+    const checked = selectedExtras.includes(opt) ? 'checked' : '';
+    const id = 'extra_' + opt.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<label class="extras-item" for="${id}">
+      <input type="checkbox" id="${id}" data-val="${escapeHtml(opt)}" ${checked}>
+      <span>${escapeHtml(opt)}</span>
+    </label>`;
+  }).join('') || '<div style="padding:8px;color:var(--paper-dim);font-size:13px;">No matches</div>';
+
+  list.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const val = cb.getAttribute('data-val');
+      if(cb.checked){
+        if(!selectedExtras.includes(val)) selectedExtras.push(val);
+      } else {
+        selectedExtras = selectedExtras.filter(v=>v!==val);
+      }
+      renderExtrasChips();
+      recalc();
+    });
+  });
+}
+
+function renderExtrasChips(){
+  $('extrasCount').textContent = selectedExtras.length ? `(${selectedExtras.length} selected — +${fmtMoney(selectedExtras.length*EXTRA_FEE)})` : '';
+  $('extrasChips').innerHTML = selectedExtras.map(opt=>{
+    return `<span class="extras-chip">${escapeHtml(opt)}<button type="button" data-val="${escapeHtml(opt)}" title="Remove">✕</button></span>`;
+  }).join('');
+  $('extrasChips').querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.getAttribute('data-val');
+      selectedExtras = selectedExtras.filter(v=>v!==val);
+      renderExtrasChips();
+      renderExtrasList($('extrasSearch').value);
+      recalc();
+    });
+  });
+}
+
+$('extrasToggle').addEventListener('click', ()=>{
+  $('extrasPanel').classList.toggle('open');
+  if($('extrasPanel').classList.contains('open')){
+    renderExtrasList('');
+    $('extrasSearch').focus();
+  }
+});
+$('extrasSearch').addEventListener('input', (e)=> renderExtrasList(e.target.value));
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.extras-wrap')){
+    $('extrasPanel').classList.remove('open');
+  }
+});
+
+
+// Loaded (tow) miles: first 5 free. Beyond that, each mile is either
+// covered by AAA ($3.50/mi) or paid by the member out of pocket ($7/mi),
+// depending on tier coverage.
+function loadedMileageSplit(miles, tier){
+  const billable = Math.max(0, miles - 5);
+  let aaaMiles = 0, memberMiles = 0;
+  if(tier === 'basic'){
+    memberMiles = billable; // AAA covers nothing beyond the free 5
+  } else if(tier === 'plus'){
+    if(miles <= 100){
+      aaaMiles = billable; // miles 6-100 covered by AAA
+    } else {
+      aaaMiles = 95; // miles 6 through 100
+      memberMiles = miles - 100; // everything past 100 is on the member
+    }
+  } else if(tier === 'premier'){
+    aaaMiles = billable; // AAA covers everything beyond the free 5
+  } else if(tier === 'nonmember'){
+    memberMiles = billable; // no AAA coverage at all
+  }
+  const aaaCharge = aaaMiles * 3.50;
+  const memberCharge = memberMiles * 7;
+  return {aaaMiles, memberMiles, aaaCharge, memberCharge, totalCharge: aaaCharge + memberCharge};
+}
 
 function calcJob(vals){
   const enroute = vals.enroute, loaded = vals.loaded;
   const tollsTotal = vals.tollsEnroute + vals.tollsLoaded;
+  const extrasCharge = (vals.extras ? vals.extras.length : 0) * EXTRA_FEE;
 
+  // En route miles: flat job-cost rate, not billed to the member directly.
   const enrouteCharge = Math.max(0, enroute-5) * 2.50;
-  const loadedCharge = Math.max(0, loaded-5) * 3.50;
-  const jobTotal = HOOKUP_FEE + enrouteCharge + loadedCharge + tollsTotal;
 
-  let oopHookup = 0, oopMiles = 0, oopTolls = 0;
+  const loadedSplit = loadedMileageSplit(loaded, vals.tier);
+  const loadedCharge = loadedSplit.totalCharge;
+  const jobTotal = HOOKUP_FEE + extrasCharge + enrouteCharge + loadedCharge + tollsTotal;
+
+  const wentIntoOverage = loadedSplit.memberMiles > 0;
+
+  let oopHookup = 0, oopTolls = 0, oopEnroute = 0, oopExtras = 0;
   if(vals.tier === 'basic'){
-    oopMiles = Math.max(0, loaded-5) * 7;
     oopTolls = tollsTotal;
   } else if(vals.tier === 'plus'){
-    if(loaded > 100){
-      oopMiles = (loaded-100) * 7;
-      oopTolls = tollsTotal;
-    }
+    oopTolls = wentIntoOverage ? tollsTotal : 0;
   } else if(vals.tier === 'premier'){
-    // AAA covers everything, all $0
+    oopTolls = 0;
   } else if(vals.tier === 'nonmember'){
     oopHookup = HOOKUP_FEE;
-    oopMiles = enrouteCharge + loadedCharge;
     oopTolls = tollsTotal;
+    oopEnroute = enrouteCharge; // no AAA at all, so the member covers this too
+    oopExtras = extrasCharge;
   }
-  const oop = oopHookup + oopMiles + oopTolls;
+  const oopMiles = loadedSplit.memberCharge + oopEnroute;
+  const oop = oopHookup + oopMiles + oopTolls + oopExtras;
   const aaaPays = jobTotal - oop;
-  return {enrouteCharge, loadedCharge, tollsTotal, jobTotal, oop, oopHookup, oopMiles, oopTolls, aaaPays};
+  return {enrouteCharge, loadedCharge, tollsTotal, extrasCharge, jobTotal, oop, oopHookup, oopMiles, oopTolls, oopExtras, aaaPays};
 }
 
 function readForm(){
@@ -297,7 +445,8 @@ function readForm(){
     loaded: parseFloat($('f_loaded').value)||0,
     tollsEnroute: parseFloat($('f_tolls_enroute').value)||0,
     tollsLoaded: parseFloat($('f_tolls_loaded').value)||0,
-    tier: tier
+    tier: tier,
+    extras: selectedExtras
   };
 }
 
@@ -305,13 +454,22 @@ function recalc(){
   const vals = readForm();
   const c = calcJob(vals);
   $('calc_hookup').textContent = fmtMoney(HOOKUP_FEE);
+  $('calc_extras_count').textContent = vals.extras.length;
+  $('calc_extras').textContent = fmtMoney(c.extrasCharge);
   $('calc_enroute').textContent = fmtMoney(c.enrouteCharge);
   $('calc_loaded').textContent = fmtMoney(c.loadedCharge);
   $('calc_tolls').textContent = fmtMoney(c.tollsTotal);
   $('calc_jobtotal').textContent = fmtMoney(c.jobTotal);
   const override = $('f_oop_override').value;
-  const oopDisplay = override !== '' ? parseFloat(override)||0 : c.oop;
+  const usingOverride = override !== '';
+  const oopDisplay = usingOverride ? (parseFloat(override)||0) : c.oop;
   $('calc_oop').textContent = fmtMoney(oopDisplay);
+  $('calc_aaa').textContent = fmtMoney(c.jobTotal - oopDisplay);
+  $('calc_oop_hookup').textContent = fmtMoney(usingOverride ? 0 : c.oopHookup);
+  $('calc_oop_miles').textContent = fmtMoney(usingOverride ? 0 : c.oopMiles);
+  $('calc_oop_tolls').textContent = fmtMoney(usingOverride ? 0 : c.oopTolls);
+  $('calc_oop_extras').textContent = fmtMoney(usingOverride ? 0 : c.oopExtras);
+  $('oopSplit').style.display = usingOverride ? 'none' : 'block';
   return c;
 }
 
@@ -333,6 +491,9 @@ $('resetBtn').addEventListener('click', ()=>{
   tier = 'basic';
   document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
   $('tierBasic').classList.add('active');
+  selectedExtras = [];
+  renderExtrasChips();
+  renderExtrasList('');
   recalc();
 });
 
@@ -375,8 +536,10 @@ function render(){
         <td>${fmtMiles(j.loaded)}</td>
         <td>${fmtMoney(j.tollsEnroute+j.tollsLoaded)}</td>
         <td><span class="pill ${j.tier}">${tierLabel(j.tier)}</span></td>
+        <td title="${escapeHtml((j.extras||[]).join(', '))}">${(j.extras&&j.extras.length) ? j.extras.length + ' item' + (j.extras.length>1?'s':'') : '—'}</td>
         <td>${escapeHtml(j.driver)}</td>
         <td>${escapeHtml(j.paymethod)}</td>
+        <td>${fmtMoney(j.jobTotal - j.oop)}</td>
         <td class="rowtotal">${fmtMoney(j.oop)}</td>
         <td><button class="del-btn" data-id="${j.id}" title="Delete">✕</button></td>
       </tr>`;
@@ -384,8 +547,8 @@ function render(){
     wrap.innerHTML = `<table>
       <thead><tr>
         <th>Job ID</th><th>Call Type</th><th>Customer</th><th>Phone</th><th>Route</th>
-        <th>En Route Mi</th><th>Loaded Mi</th><th>Tolls</th><th>Tier</th><th>Driver</th>
-        <th>Payment</th><th>Out of Pocket</th><th></th>
+        <th>En Route Mi</th><th>Loaded Mi</th><th>Tolls</th><th>Tier</th><th>Extras</th><th>Driver</th>
+        <th>Payment</th><th>AAA Pays</th><th>Out of Pocket</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -407,8 +570,10 @@ function updateStats(){
   const count = jobs.length;
   const miles = jobs.reduce((a,j)=>a+(j.enroute||0)+(j.loaded||0),0);
   const oop = jobs.reduce((a,j)=>a+(j.oop||0),0);
+  const aaa = jobs.reduce((a,j)=>a+((j.jobTotal||0)-(j.oop||0)),0);
   $('statCount').textContent = count;
   $('statMiles').textContent = fmtMiles(miles);
+  $('statAAA').textContent = fmtMoney(aaa).replace('.00','');
   $('statOOP').textContent = fmtMoney(oop).replace('.00','');
 }
 
@@ -436,6 +601,7 @@ $('jobForm').addEventListener('submit', (e)=>{
     tollsEnroute: vals.tollsEnroute,
     tollsLoaded: vals.tollsLoaded,
     tier: vals.tier,
+    extras: vals.extras,
     paymethod: $('f_paymethod').value,
     jobTotal: c.jobTotal,
     oop: oopFinal,
@@ -447,6 +613,9 @@ $('jobForm').addEventListener('submit', (e)=>{
   tier = 'basic';
   document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
   $('tierBasic').classList.add('active');
+  selectedExtras = [];
+  renderExtrasChips();
+  renderExtrasList('');
   recalc();
   render();
 });
